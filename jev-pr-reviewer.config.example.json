@@ -5,54 +5,54 @@
         "maxChars": 80000
     },
     "weights": {
-        "description": "Pontos somados ao score quando a decisão JEV correspondente for 'yes'. Quanto maior o peso, mais aquele sinal empurra o risco. Só entram no score se o JEV disser yes — 'no' contribui 0.",
-        "security": 35,
-        "database": 25,
-        "api": 15,
-        "authentication": 10
+        "description": "Pesos RELATIVOS na média ponderada dos impactos JEV (0–100) para security, database, api e authentication. Não são pontos somados: score = round(sum(impact_i * weight_i) / sum(weight_i)). Ex.: security 5 e api 2 fazem security contar 2,5× mais que api. Pelo menos um peso deve ser > 0.",
+        "security": 5,
+        "database": 3,
+        "api": 2,
+        "authentication": 1
     },
     "files": {
-        "description": "Pontos pelo NÚMERO DE ARQUIVOS distintos no diff (métrica do state, não do JEV). Use tiers com 'max' (inclusive) em ordem crescente; o último tier usa 'above' para valores maiores que o max anterior.",
+        "description": "Reservado / compatibilidade. NÃO entra no score nesta versão (só métricas de state). Tiers antigos de pontos por número de arquivos.",
         "tiers": [
             {
                 "max": 3,
                 "points": 0,
-                "description": "Até 3 arquivos: mudança pequena — sem pontos extras."
+                "description": "Até 3 arquivos (não pontua)."
             },
             {
                 "max": 10,
                 "points": 5,
-                "description": "De 4 a 10 arquivos: mudança média."
+                "description": "De 4 a 10 arquivos (não pontua)."
             },
             {
                 "above": 10,
                 "points": 10,
-                "description": "Mais de 10 arquivos: mudança ampla / espalhada."
+                "description": "Mais de 10 arquivos (não pontua)."
             }
         ]
     },
     "lines": {
-        "description": "Pontos pela soma additions+deletions do diff (métrica do state). Mesma lógica de tiers que files.",
+        "description": "Reservado / compatibilidade. NÃO entra no score nesta versão. Tiers antigos por additions+deletions.",
         "tiers": [
             {
                 "max": 50,
                 "points": 0,
-                "description": "Até 50 linhas alteradas: impacto pequeno."
+                "description": "Até 50 linhas (não pontua)."
             },
             {
                 "max": 200,
                 "points": 3,
-                "description": "De 51 a 200 linhas: impacto médio."
+                "description": "De 51 a 200 linhas (não pontua)."
             },
             {
                 "above": 200,
                 "points": 5,
-                "description": "Mais de 200 linhas: mudança grande."
+                "description": "Mais de 200 linhas (não pontua)."
             }
         ]
     },
     "levels": {
-        "description": "Depois de somar os pontos, o score é limitado a no máximo 100. Estes tetos definem a faixa: 0..lowMax = LOW; lowMax+1..mediumMax = MEDIUM; mediumMax+1..highMax = HIGH; acima de highMax = CRITICAL. AÇÃO: LOW→APPROVE, MEDIUM/HIGH→REVIEW, CRITICAL→BLOCK — sujeito ao gate de confiança.",
+        "description": "O score (média ponderada, 0–100) usa estes tetos: 0..lowMax = LOW; lowMax+1..mediumMax = MEDIUM; mediumMax+1..highMax = HIGH; acima de highMax = CRITICAL. AÇÃO: LOW→APPROVE, MEDIUM/HIGH→REVIEW, CRITICAL→BLOCK — sujeito ao gate de confiança.",
         "lowMax": 30,
         "mediumMax": 60,
         "highMax": 80
@@ -62,7 +62,7 @@
         "threshold": 0.7
     },
     "recommendations": {
-        "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact=yes.",
+        "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact >= 1.",
         "approve": "Automatic approval possible",
         "review": "Human review recommended",
         "blockOrSecurity": "Security review required"

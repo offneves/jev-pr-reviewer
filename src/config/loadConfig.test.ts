@@ -14,7 +14,7 @@ describe("loadConfig", () => {
         const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
         try {
             const cfg = await loadConfig({ cwd: dir });
-            expect(cfg.weights.security).toBe(35);
+            expect(cfg.weights.security).toBe(5);
             expect(cfg.confidence.threshold).toBe(0.7);
             expect(cfg.diff.maxChars).toBe(80_000);
             expect(cfg).toEqual(DEFAULT_CONFIG);
@@ -36,7 +36,7 @@ describe("loadConfig", () => {
             );
             const cfg = await loadConfig({ cwd: dir });
             expect(cfg.weights.security).toBe(50);
-            expect(cfg.weights.database).toBe(25);
+            expect(cfg.weights.database).toBe(3);
             expect(cfg.confidence.threshold).toBe(0.5);
             expect(cfg.diff.maxChars).toBe(80_000);
         } finally {
@@ -140,10 +140,38 @@ describe("loadConfig", () => {
         const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
         try {
             const cfg = await loadConfig({ cwd: dir });
-            expect(cfg.weights.security).toBe(35);
+            expect(cfg.weights.security).toBe(5);
         } finally {
             if (prev === undefined) delete process.env.JEV_WEIGHT_SECURITY;
             else process.env.JEV_WEIGHT_SECURITY = prev;
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("rejects config when every weight is 0", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        const path = join(dir, "zero.json");
+        try {
+            await writeFile(
+                path,
+                JSON.stringify({
+                    weights: {
+                        security: 0,
+                        database: 0,
+                        api: 0,
+                        authentication: 0,
+                    },
+                }),
+                "utf8",
+            );
+            await expect(loadConfig({ configPath: path })).rejects.toSatisfy(
+                (err: unknown) => {
+                    expect(err).toBeInstanceOf(ConfigError);
+                    expect((err as Error).message).toMatch(/weight/i);
+                    return true;
+                },
+            );
+        } finally {
             await rm(dir, { recursive: true, force: true });
         }
     });

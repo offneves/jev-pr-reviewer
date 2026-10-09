@@ -5,10 +5,10 @@ export const DEFAULT_CONFIG: AppConfig = {
         maxChars: 80_000,
     },
     weights: {
-        security: 35,
-        database: 25,
-        api: 15,
-        authentication: 10,
+        security: 5,
+        database: 3,
+        api: 2,
+        authentication: 1,
     },
     files: {
         tiers: [

@@ -97,7 +97,8 @@ describe("CLI", () => {
             await writeFile(path, SAMPLE, "utf8");
             await runCli(["explain", path, "--mock"]);
             const out = logs.join("");
-            expect(out).toMatch(/\+\d+/);
+            expect(out).toMatch(/impact \d+/);
+            expect(out).toMatch(/weight \d+/);
             expect(out).toMatch(/Total score:/);
         } finally {
             writeSpy.mockRestore();

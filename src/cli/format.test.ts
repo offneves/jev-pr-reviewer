@@ -24,26 +24,26 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
         },
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
-            securityImpact: { value: 100, confidence: 0.9 },
-            databaseChange: { value: 0, confidence: 0.9 },
-            apiImpact: { value: 100, confidence: 0.9 },
-            authenticationImpact: { value: 0, confidence: 0.9 },
+            securityImpact: { value: 85, confidence: 0.9 },
+            databaseChange: { value: 40, confidence: 0.9 },
+            apiImpact: { value: 10, confidence: 0.9 },
+            authenticationImpact: { value: 7, confidence: 0.9 },
             needsHumanReview: { value: "yes", confidence: 0.9 },
             riskLevel: { value: "HIGH", confidence: 0.9 },
         },
-        score: 55,
+        score: 51,
         riskLevel: "MEDIUM",
         confidence: 0.9,
         action: "REVIEW",
         recommendation: "Security review required",
         contributions: [
-            { signal: "security", points: 100, detail: "impact 100 (weight 5)" },
-            { signal: "database", points: 0, detail: "impact 0 (weight 3)" },
-            { signal: "api", points: 100, detail: "impact 100 (weight 2)" },
+            { signal: "security", points: 85, detail: "impact 85 (weight 5)" },
+            { signal: "database", points: 40, detail: "impact 40 (weight 3)" },
+            { signal: "api", points: 10, detail: "impact 10 (weight 2)" },
             {
                 signal: "authentication",
-                points: 0,
-                detail: "impact 0 (weight 1)",
+                points: 7,
+                detail: "impact 7 (weight 1)",
             },
         ],
         ...overrides,
@@ -138,14 +138,10 @@ describe("formatAnalyze", () => {
 
         const scoredBlock = text.slice(scoredIdx, advisoryIdx);
         const advisoryBlock = text.slice(advisoryIdx);
-        expect(scoredBlock).toContain("security");
-        expect(scoredBlock).toContain("database");
-        expect(scoredBlock).toContain("api");
-        expect(scoredBlock).toContain("authentication");
-        expect(scoredBlock).toMatch(/security[\s\S]*?\b100\b/);
-        expect(scoredBlock).toMatch(/database[\s\S]*?\b0\b/);
-        expect(scoredBlock).toMatch(/api[\s\S]*?\b100\b/);
-        expect(scoredBlock).toMatch(/authentication[\s\S]*?\b0\b/);
+        expect(scoredBlock).toMatch(/security\s+85\b/);
+        expect(scoredBlock).toMatch(/database\s+40\b/);
+        expect(scoredBlock).toMatch(/api\s+10\b/);
+        expect(scoredBlock).toMatch(/authentication\s+7\b/);
         expect(scoredBlock).not.toMatch(/\byes\b/);
         expect(scoredBlock).not.toContain("jev risk");
         expect(advisoryBlock).toContain("breaking change");
@@ -186,9 +182,10 @@ describe("formatExplain", () => {
     it("lists contribution impact, weight, and total score", () => {
         const result = sampleResult();
         const text = formatExplain(result, baseDisplay());
-        expect(text).toMatch(/\b100\b/);
+        expect(text).toMatch(/security\s+85\b/);
         expect(text).toContain("weight 5");
-        expect(text).toContain("impact 100");
+        expect(text).toContain("impact 85");
+        expect(text).toContain("impact 40");
         expect(text).toContain(`Total score: ${result.score}`);
         expect(text).toContain("Score breakdown");
         expect(text).toContain("Contributions");

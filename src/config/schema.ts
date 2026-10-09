@@ -84,12 +84,18 @@ export const ResolvedAppConfigSchema = z.object({
     diff: z.object({
         maxChars: z.number().int().positive(),
     }),
-    weights: z.object({
-        security: z.number().int().nonnegative(),
-        database: z.number().int().nonnegative(),
-        api: z.number().int().nonnegative(),
-        authentication: z.number().int().nonnegative(),
-    }),
+    weights: z
+        .object({
+            security: z.number().int().nonnegative(),
+            database: z.number().int().nonnegative(),
+            api: z.number().int().nonnegative(),
+            authentication: z.number().int().nonnegative(),
+        })
+        .refine(
+            (w) =>
+                w.security + w.database + w.api + w.authentication > 0,
+            { message: "at least one weight must be greater than 0" },
+        ),
     files: z.object({
         tiers: z.array(TierSchema).min(1),
     }),

@@ -2,18 +2,20 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AnalysisResultSchema } from "../schema.js";
-import { runCli } from "./main.js";
+import { AnalysisResultSchema } from "../../src/schema.js";
+import { runCli } from "../../src/cli/main.js";
 
-vi.mock("../git/fetchMrDiff.js", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../git/fetchMrDiff.js")>();
+vi.mock("../../src/git/fetchMrDiff.js", async (importOriginal) => {
+    const actual = await importOriginal<
+        typeof import("../../src/git/fetchMrDiff.js")
+    >();
     return {
         ...actual,
         fetchMrDiff: vi.fn(),
     };
 });
 
-import { fetchMrDiff } from "../git/fetchMrDiff.js";
+import { fetchMrDiff } from "../../src/git/fetchMrDiff.js";
 
 const SAMPLE = `diff --git a/a.ts b/a.ts
 --- a/a.ts

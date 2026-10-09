@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildJevQuestions, scoreToImpact } from "./questions.js";
+import { buildJevQuestions, scoreToImpact } from "../../src/jev/questions.js";
 
 describe("scoreToImpact", () => {
     it("maps 0–10 rubric scores to 0–100 impact", () => {

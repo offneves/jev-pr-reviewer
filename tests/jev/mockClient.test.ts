@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createMockJevClient } from "./mockClient.js";
-import { JEV_DECISION_KEYS } from "./questions.js";
+import { createMockJevClient } from "../../src/jev/mockClient.js";
+import { JEV_DECISION_KEYS } from "../../src/jev/questions.js";
 
 const emptyState = {
     files: [],

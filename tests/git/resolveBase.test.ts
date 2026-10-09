@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fetchMrDiff } from "./fetchMrDiff.js";
-import type { CommandResult, RunCommand } from "./runCommand.js";
+import { fetchMrDiff } from "../../src/git/fetchMrDiff.js";
+import type { CommandResult, RunCommand } from "../../src/git/runCommand.js";
 
 function mockRun(
     handlers: Record<string, () => CommandResult>,

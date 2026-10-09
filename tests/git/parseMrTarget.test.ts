@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MrDiffError } from "./errors.js";
-import { parseMrTarget } from "./parseMrTarget.js";
+import { MrDiffError } from "../../src/git/errors.js";
+import { parseMrTarget } from "../../src/git/parseMrTarget.js";
 
 describe("parseMrTarget", () => {
     it("parses a bare MR number", () => {

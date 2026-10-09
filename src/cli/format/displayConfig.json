@@ -1,0 +1,59 @@
+{
+    "_docs": "Labels e ordem da saída CLI. Não altera score nem política de risco.",
+    "analyze": {
+        "title": "jev-pr-reviewer · PR Risk Analysis",
+        "sections": {
+            "risk": "Risk",
+            "confidence": "Confidence",
+            "action": "Action",
+            "decisions": "Decisions",
+            "state": "State"
+        },
+        "decisions": {
+            "order": [
+                "breakingChange",
+                "securityImpact",
+                "databaseChange",
+                "apiImpact",
+                "authenticationImpact",
+                "needsHumanReview",
+                "riskLevel"
+            ],
+            "labels": {
+                "breakingChange": "breaking change",
+                "securityImpact": "security",
+                "databaseChange": "database",
+                "apiImpact": "api",
+                "authenticationImpact": "authentication",
+                "needsHumanReview": "human review",
+                "riskLevel": "jev risk"
+            }
+        }
+    },
+    "explain": {
+        "title": "jev-pr-reviewer · Score breakdown",
+        "sections": {
+            "contributions": "Contributions",
+            "totalScore": "Total score:",
+            "riskLevel": "Risk level:"
+        },
+        "signals": {
+            "order": [
+                "security",
+                "database",
+                "api",
+                "authentication",
+                "files",
+                "lines"
+            ],
+            "labels": {
+                "security": "security",
+                "database": "database",
+                "api": "api",
+                "authentication": "authentication",
+                "files": "files",
+                "lines": "lines"
+            }
+        }
+    }
+}

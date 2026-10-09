@@ -1,0 +1,34 @@
+{
+    "name": "jev-pr-reviewer",
+    "version": "1.0.0",
+    "description": "CLI to analyze PR diffs with JEV decisions and code-owned risk policy",
+    "main": "dist/index.js",
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit -p tsconfig.json",
+        "build": "tsc -p tsconfig.build.json && mkdir -p dist/cli/format && cp src/cli/format/displayConfig.json dist/cli/format/displayConfig.json",
+        "demo:busy": "node bin/jev-pr-reviewer.mjs analyze fixtures/busy.diff --mock --profile busy",
+        "demo:critical": "node bin/jev-pr-reviewer.mjs analyze fixtures/busy.diff --mock --profile critical",
+        "demo:explain": "node bin/jev-pr-reviewer.mjs explain fixtures/busy.diff --mock --profile busy"
+    },
+    "bin": {
+        "jev-pr-reviewer": "./bin/jev-pr-reviewer.mjs"
+    },
+    "license": "MIT",
+    "type": "module",
+    "dependencies": {
+        "@typesafe-ai/sdk": "^0.6.0",
+        "citty": "^0.2.2",
+        "dotenv": "^18.0.6",
+        "zod": "^4.6.5"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.4",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.3"
+    }
+}

@@ -1,0 +1,390 @@
+diff --git a/src/auth/login.ts b/src/auth/login.ts
+index 064..0c8 100644
+--- a/src/auth/login.ts
++++ b/src/auth/login.ts
+@@ -1,3 +1,12 @@
+-old line 0 in src/auth/login.ts
+-old line 1 in src/auth/login.ts
+-old line 2 in src/auth/login.ts
++new line 0 in src/auth/login.ts
++new line 1 in src/auth/login.ts
++new line 2 in src/auth/login.ts
++new line 3 in src/auth/login.ts
++new line 4 in src/auth/login.ts
++new line 5 in src/auth/login.ts
++new line 6 in src/auth/login.ts
++new line 7 in src/auth/login.ts
++new line 8 in src/auth/login.ts
++new line 9 in src/auth/login.ts
++new line 10 in src/auth/login.ts
++new line 11 in src/auth/login.ts
+diff --git a/src/auth/session.ts b/src/auth/session.ts
+index 065..0c9 100644
+--- a/src/auth/session.ts
++++ b/src/auth/session.ts
+@@ -1,4 +1,14 @@
+-old line 0 in src/auth/session.ts
+-old line 1 in src/auth/session.ts
+-old line 2 in src/auth/session.ts
+-old line 3 in src/auth/session.ts
++new line 0 in src/auth/session.ts
++new line 1 in src/auth/session.ts
++new line 2 in src/auth/session.ts
++new line 3 in src/auth/session.ts
++new line 4 in src/auth/session.ts
++new line 5 in src/auth/session.ts
++new line 6 in src/auth/session.ts
++new line 7 in src/auth/session.ts
++new line 8 in src/auth/session.ts
++new line 9 in src/auth/session.ts
++new line 10 in src/auth/session.ts
++new line 11 in src/auth/session.ts
++new line 12 in src/auth/session.ts
++new line 13 in src/auth/session.ts
+diff --git a/src/api/users.ts b/src/api/users.ts
+index 066..0ca 100644
+--- a/src/api/users.ts
++++ b/src/api/users.ts
+@@ -1,5 +1,16 @@
+-old line 0 in src/api/users.ts
+-old line 1 in src/api/users.ts
+-old line 2 in src/api/users.ts
+-old line 3 in src/api/users.ts
+-old line 4 in src/api/users.ts
++new line 0 in src/api/users.ts
++new line 1 in src/api/users.ts
++new line 2 in src/api/users.ts
++new line 3 in src/api/users.ts
++new line 4 in src/api/users.ts
++new line 5 in src/api/users.ts
++new line 6 in src/api/users.ts
++new line 7 in src/api/users.ts
++new line 8 in src/api/users.ts
++new line 9 in src/api/users.ts
++new line 10 in src/api/users.ts
++new line 11 in src/api/users.ts
++new line 12 in src/api/users.ts
++new line 13 in src/api/users.ts
++new line 14 in src/api/users.ts
++new line 15 in src/api/users.ts
+diff --git a/src/api/billing.ts b/src/api/billing.ts
+index 067..0cb 100644
+--- a/src/api/billing.ts
++++ b/src/api/billing.ts
+@@ -1,6 +1,18 @@
+-old line 0 in src/api/billing.ts
+-old line 1 in src/api/billing.ts
+-old line 2 in src/api/billing.ts
+-old line 3 in src/api/billing.ts
+-old line 4 in src/api/billing.ts
+-old line 5 in src/api/billing.ts
++new line 0 in src/api/billing.ts
++new line 1 in src/api/billing.ts
++new line 2 in src/api/billing.ts
++new line 3 in src/api/billing.ts
++new line 4 in src/api/billing.ts
++new line 5 in src/api/billing.ts
++new line 6 in src/api/billing.ts
++new line 7 in src/api/billing.ts
++new line 8 in src/api/billing.ts
++new line 9 in src/api/billing.ts
++new line 10 in src/api/billing.ts
++new line 11 in src/api/billing.ts
++new line 12 in src/api/billing.ts
++new line 13 in src/api/billing.ts
++new line 14 in src/api/billing.ts
++new line 15 in src/api/billing.ts
++new line 16 in src/api/billing.ts
++new line 17 in src/api/billing.ts
+diff --git a/src/db/migrations/0042_users.sql b/src/db/migrations/0042_users.sql
+index 068..0cc 100644
+--- a/src/db/migrations/0042_users.sql
++++ b/src/db/migrations/0042_users.sql
+@@ -1,3 +1,20 @@
+-old line 0 in src/db/migrations/0042_users.sql
+-old line 1 in src/db/migrations/0042_users.sql
+-old line 2 in src/db/migrations/0042_users.sql
++new line 0 in src/db/migrations/0042_users.sql
++new line 1 in src/db/migrations/0042_users.sql
++new line 2 in src/db/migrations/0042_users.sql
++new line 3 in src/db/migrations/0042_users.sql
++new line 4 in src/db/migrations/0042_users.sql
++new line 5 in src/db/migrations/0042_users.sql
++new line 6 in src/db/migrations/0042_users.sql
++new line 7 in src/db/migrations/0042_users.sql
++new line 8 in src/db/migrations/0042_users.sql
++new line 9 in src/db/migrations/0042_users.sql
++new line 10 in src/db/migrations/0042_users.sql
++new line 11 in src/db/migrations/0042_users.sql
++new line 12 in src/db/migrations/0042_users.sql
++new line 13 in src/db/migrations/0042_users.sql
++new line 14 in src/db/migrations/0042_users.sql
++new line 15 in src/db/migrations/0042_users.sql
++new line 16 in src/db/migrations/0042_users.sql
++new line 17 in src/db/migrations/0042_users.sql
++new line 18 in src/db/migrations/0042_users.sql
++new line 19 in src/db/migrations/0042_users.sql
+diff --git a/src/db/schema.ts b/src/db/schema.ts
+index 069..0cd 100644
+--- a/src/db/schema.ts
++++ b/src/db/schema.ts
+@@ -1,4 +1,22 @@
+-old line 0 in src/db/schema.ts
+-old line 1 in src/db/schema.ts
+-old line 2 in src/db/schema.ts
+-old line 3 in src/db/schema.ts
++new line 0 in src/db/schema.ts
++new line 1 in src/db/schema.ts
++new line 2 in src/db/schema.ts
++new line 3 in src/db/schema.ts
++new line 4 in src/db/schema.ts
++new line 5 in src/db/schema.ts
++new line 6 in src/db/schema.ts
++new line 7 in src/db/schema.ts
++new line 8 in src/db/schema.ts
++new line 9 in src/db/schema.ts
++new line 10 in src/db/schema.ts
++new line 11 in src/db/schema.ts
++new line 12 in src/db/schema.ts
++new line 13 in src/db/schema.ts
++new line 14 in src/db/schema.ts
++new line 15 in src/db/schema.ts
++new line 16 in src/db/schema.ts
++new line 17 in src/db/schema.ts
++new line 18 in src/db/schema.ts
++new line 19 in src/db/schema.ts
++new line 20 in src/db/schema.ts
++new line 21 in src/db/schema.ts
+diff --git a/src/security/tokens.ts b/src/security/tokens.ts
+index 06a..0ce 100644
+--- a/src/security/tokens.ts
++++ b/src/security/tokens.ts
+@@ -1,5 +1,24 @@
+-old line 0 in src/security/tokens.ts
+-old line 1 in src/security/tokens.ts
+-old line 2 in src/security/tokens.ts
+-old line 3 in src/security/tokens.ts
+-old line 4 in src/security/tokens.ts
++new line 0 in src/security/tokens.ts
++new line 1 in src/security/tokens.ts
++new line 2 in src/security/tokens.ts
++new line 3 in src/security/tokens.ts
++new line 4 in src/security/tokens.ts
++new line 5 in src/security/tokens.ts
++new line 6 in src/security/tokens.ts
++new line 7 in src/security/tokens.ts
++new line 8 in src/security/tokens.ts
++new line 9 in src/security/tokens.ts
++new line 10 in src/security/tokens.ts
++new line 11 in src/security/tokens.ts
++new line 12 in src/security/tokens.ts
++new line 13 in src/security/tokens.ts
++new line 14 in src/security/tokens.ts
++new line 15 in src/security/tokens.ts
++new line 16 in src/security/tokens.ts
++new line 17 in src/security/tokens.ts
++new line 18 in src/security/tokens.ts
++new line 19 in src/security/tokens.ts
++new line 20 in src/security/tokens.ts
++new line 21 in src/security/tokens.ts
++new line 22 in src/security/tokens.ts
++new line 23 in src/security/tokens.ts
+diff --git a/src/middleware/rateLimit.ts b/src/middleware/rateLimit.ts
+index 06b..0cf 100644
+--- a/src/middleware/rateLimit.ts
++++ b/src/middleware/rateLimit.ts
+@@ -1,6 +1,26 @@
+-old line 0 in src/middleware/rateLimit.ts
+-old line 1 in src/middleware/rateLimit.ts
+-old line 2 in src/middleware/rateLimit.ts
+-old line 3 in src/middleware/rateLimit.ts
+-old line 4 in src/middleware/rateLimit.ts
+-old line 5 in src/middleware/rateLimit.ts
++new line 0 in src/middleware/rateLimit.ts
++new line 1 in src/middleware/rateLimit.ts
++new line 2 in src/middleware/rateLimit.ts
++new line 3 in src/middleware/rateLimit.ts
++new line 4 in src/middleware/rateLimit.ts
++new line 5 in src/middleware/rateLimit.ts
++new line 6 in src/middleware/rateLimit.ts
++new line 7 in src/middleware/rateLimit.ts
++new line 8 in src/middleware/rateLimit.ts
++new line 9 in src/middleware/rateLimit.ts
++new line 10 in src/middleware/rateLimit.ts
++new line 11 in src/middleware/rateLimit.ts
++new line 12 in src/middleware/rateLimit.ts
++new line 13 in src/middleware/rateLimit.ts
++new line 14 in src/middleware/rateLimit.ts
++new line 15 in src/middleware/rateLimit.ts
++new line 16 in src/middleware/rateLimit.ts
++new line 17 in src/middleware/rateLimit.ts
++new line 18 in src/middleware/rateLimit.ts
++new line 19 in src/middleware/rateLimit.ts
++new line 20 in src/middleware/rateLimit.ts
++new line 21 in src/middleware/rateLimit.ts
++new line 22 in src/middleware/rateLimit.ts
++new line 23 in src/middleware/rateLimit.ts
++new line 24 in src/middleware/rateLimit.ts
++new line 25 in src/middleware/rateLimit.ts
+diff --git a/src/services/payment.ts b/src/services/payment.ts
+index 06c..0d0 100644
+--- a/src/services/payment.ts
++++ b/src/services/payment.ts
+@@ -1,3 +1,28 @@
+-old line 0 in src/services/payment.ts
+-old line 1 in src/services/payment.ts
+-old line 2 in src/services/payment.ts
++new line 0 in src/services/payment.ts
++new line 1 in src/services/payment.ts
++new line 2 in src/services/payment.ts
++new line 3 in src/services/payment.ts
++new line 4 in src/services/payment.ts
++new line 5 in src/services/payment.ts
++new line 6 in src/services/payment.ts
++new line 7 in src/services/payment.ts
++new line 8 in src/services/payment.ts
++new line 9 in src/services/payment.ts
++new line 10 in src/services/payment.ts
++new line 11 in src/services/payment.ts
++new line 12 in src/services/payment.ts
++new line 13 in src/services/payment.ts
++new line 14 in src/services/payment.ts
++new line 15 in src/services/payment.ts
++new line 16 in src/services/payment.ts
++new line 17 in src/services/payment.ts
++new line 18 in src/services/payment.ts
++new line 19 in src/services/payment.ts
++new line 20 in src/services/payment.ts
++new line 21 in src/services/payment.ts
++new line 22 in src/services/payment.ts
++new line 23 in src/services/payment.ts
++new line 24 in src/services/payment.ts
++new line 25 in src/services/payment.ts
++new line 26 in src/services/payment.ts
++new line 27 in src/services/payment.ts
+diff --git a/src/utils/crypto.ts b/src/utils/crypto.ts
+index 06d..0d1 100644
+--- a/src/utils/crypto.ts
++++ b/src/utils/crypto.ts
+@@ -1,4 +1,30 @@
+-old line 0 in src/utils/crypto.ts
+-old line 1 in src/utils/crypto.ts
+-old line 2 in src/utils/crypto.ts
+-old line 3 in src/utils/crypto.ts
++new line 0 in src/utils/crypto.ts
++new line 1 in src/utils/crypto.ts
++new line 2 in src/utils/crypto.ts
++new line 3 in src/utils/crypto.ts
++new line 4 in src/utils/crypto.ts
++new line 5 in src/utils/crypto.ts
++new line 6 in src/utils/crypto.ts
++new line 7 in src/utils/crypto.ts
++new line 8 in src/utils/crypto.ts
++new line 9 in src/utils/crypto.ts
++new line 10 in src/utils/crypto.ts
++new line 11 in src/utils/crypto.ts
++new line 12 in src/utils/crypto.ts
++new line 13 in src/utils/crypto.ts
++new line 14 in src/utils/crypto.ts
++new line 15 in src/utils/crypto.ts
++new line 16 in src/utils/crypto.ts
++new line 17 in src/utils/crypto.ts
++new line 18 in src/utils/crypto.ts
++new line 19 in src/utils/crypto.ts
++new line 20 in src/utils/crypto.ts
++new line 21 in src/utils/crypto.ts
++new line 22 in src/utils/crypto.ts
++new line 23 in src/utils/crypto.ts
++new line 24 in src/utils/crypto.ts
++new line 25 in src/utils/crypto.ts
++new line 26 in src/utils/crypto.ts
++new line 27 in src/utils/crypto.ts
++new line 28 in src/utils/crypto.ts
++new line 29 in src/utils/crypto.ts
+diff --git a/src/config/env.ts b/src/config/env.ts
+index 06e..0d2 100644
+--- a/src/config/env.ts
++++ b/src/config/env.ts
+@@ -1,5 +1,32 @@
+-old line 0 in src/config/env.ts
+-old line 1 in src/config/env.ts
+-old line 2 in src/config/env.ts
+-old line 3 in src/config/env.ts
+-old line 4 in src/config/env.ts
++new line 0 in src/config/env.ts
++new line 1 in src/config/env.ts
++new line 2 in src/config/env.ts
++new line 3 in src/config/env.ts
++new line 4 in src/config/env.ts
++new line 5 in src/config/env.ts
++new line 6 in src/config/env.ts
++new line 7 in src/config/env.ts
++new line 8 in src/config/env.ts
++new line 9 in src/config/env.ts
++new line 10 in src/config/env.ts
++new line 11 in src/config/env.ts
++new line 12 in src/config/env.ts
++new line 13 in src/config/env.ts
++new line 14 in src/config/env.ts
++new line 15 in src/config/env.ts
++new line 16 in src/config/env.ts
++new line 17 in src/config/env.ts
++new line 18 in src/config/env.ts
++new line 19 in src/config/env.ts
++new line 20 in src/config/env.ts
++new line 21 in src/config/env.ts
++new line 22 in src/config/env.ts
++new line 23 in src/config/env.ts
++new line 24 in src/config/env.ts
++new line 25 in src/config/env.ts
++new line 26 in src/config/env.ts
++new line 27 in src/config/env.ts
++new line 28 in src/config/env.ts
++new line 29 in src/config/env.ts
++new line 30 in src/config/env.ts
++new line 31 in src/config/env.ts
+diff --git a/README.md b/README.md
+index 06f..0d3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,34 @@
+-old line 0 in README.md
+-old line 1 in README.md
+-old line 2 in README.md
+-old line 3 in README.md
+-old line 4 in README.md
+-old line 5 in README.md
++new line 0 in README.md
++new line 1 in README.md
++new line 2 in README.md
++new line 3 in README.md
++new line 4 in README.md
++new line 5 in README.md
++new line 6 in README.md
++new line 7 in README.md
++new line 8 in README.md
++new line 9 in README.md
++new line 10 in README.md
++new line 11 in README.md
++new line 12 in README.md
++new line 13 in README.md
++new line 14 in README.md
++new line 15 in README.md
++new line 16 in README.md
++new line 17 in README.md
++new line 18 in README.md
++new line 19 in README.md
++new line 20 in README.md
++new line 21 in README.md
++new line 22 in README.md
++new line 23 in README.md
++new line 24 in README.md
++new line 25 in README.md
++new line 26 in README.md
++new line 27 in README.md
++new line 28 in README.md
++new line 29 in README.md
++new line 30 in README.md
++new line 31 in README.md
++new line 32 in README.md
++new line 33 in README.md

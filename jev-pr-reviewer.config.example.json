@@ -1,0 +1,74 @@
+{
+    "_docs": "Este arquivo controla a POLÍTICA DE RISCO no código da aplicação. Copie para jev-pr-reviewer.config.json e ajuste. Campos description/_docs são só documentação e são ignorados no cálculo.",
+    "diff": {
+        "description": "Limite do texto do diff guardado no state e enviado ao JEV. Se o arquivo for maior, o texto é cortado e truncated=true.",
+        "maxChars": 80000
+    },
+    "weights": {
+        "description": "Pontos somados ao score quando a decisão JEV correspondente for 'yes'. Quanto maior o peso, mais aquele sinal empurra o risco. Só entram no score se o JEV disser yes — 'no' contribui 0.",
+        "security": 35,
+        "database": 25,
+        "api": 15,
+        "authentication": 10
+    },
+    "files": {
+        "description": "Pontos pelo NÚMERO DE ARQUIVOS distintos no diff (métrica do state, não do JEV). Use tiers com 'max' (inclusive) em ordem crescente; o último tier usa 'above' para valores maiores que o max anterior.",
+        "tiers": [
+            {
+                "max": 3,
+                "points": 0,
+                "description": "Até 3 arquivos: mudança pequena — sem pontos extras."
+            },
+            {
+                "max": 10,
+                "points": 5,
+                "description": "De 4 a 10 arquivos: mudança média."
+            },
+            {
+                "above": 10,
+                "points": 10,
+                "description": "Mais de 10 arquivos: mudança ampla / espalhada."
+            }
+        ]
+    },
+    "lines": {
+        "description": "Pontos pela soma additions+deletions do diff (métrica do state). Mesma lógica de tiers que files.",
+        "tiers": [
+            {
+                "max": 50,
+                "points": 0,
+                "description": "Até 50 linhas alteradas: impacto pequeno."
+            },
+            {
+                "max": 200,
+                "points": 3,
+                "description": "De 51 a 200 linhas: impacto médio."
+            },
+            {
+                "above": 200,
+                "points": 5,
+                "description": "Mais de 200 linhas: mudança grande."
+            }
+        ]
+    },
+    "levels": {
+        "description": "Depois de somar os pontos, o score é limitado a no máximo 100. Estes tetos definem a faixa: 0..lowMax = LOW; lowMax+1..mediumMax = MEDIUM; mediumMax+1..highMax = HIGH; acima de highMax = CRITICAL. AÇÃO: LOW→APPROVE, MEDIUM/HIGH→REVIEW, CRITICAL→BLOCK — sujeito ao gate de confiança.",
+        "lowMax": 30,
+        "mediumMax": 60,
+        "highMax": 80
+    },
+    "confidence": {
+        "description": "Média aritmética das confidences das decisões JEV (0 a 1). Se a média for ESTRITAMENTE MENOR que threshold, a ação vira REVIEW mesmo que o nível fosse APPROVE ou BLOCK. Evita automação quando o modelo está inseguro.",
+        "threshold": 0.7
+    },
+    "recommendations": {
+        "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact=yes.",
+        "approve": "Automatic approval possible",
+        "review": "Human review recommended",
+        "blockOrSecurity": "Security review required"
+    },
+    "cli": {
+        "description": "defaultBaseBranch é a branch base preferida no fallback git do comando 'mr' quando você não passa --base. Se essa branch não existir no repo, a CLI ainda pode tentar main/master conforme a implementação de resolve.",
+        "defaultBaseBranch": "main"
+    }
+}

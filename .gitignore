@@ -9,3 +9,5 @@ jev-pr-reviewer.config.json
 *.log
 .DS_Store
 .specs/
+.cursor/
+docs/

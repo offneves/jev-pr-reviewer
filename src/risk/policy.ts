@@ -28,12 +28,16 @@ function actionFromLevel(level: RiskLevel): PolicyAction {
     }
 }
 
+export function hasSecurityImpact(decisions: JevDecisions): boolean {
+    return decisions.securityImpact.value >= 1;
+}
+
 function recommendationFor(
     action: PolicyAction,
-    securityYes: boolean,
+    securityImpactPresent: boolean,
     recommendations: AppConfig["recommendations"],
 ): string {
-    if (securityYes) {
+    if (securityImpactPresent) {
         return recommendations.blockOrSecurity;
     }
     if (action === "APPROVE") return recommendations.approve;
@@ -47,7 +51,6 @@ export function applyPolicy(
     confidence: number,
     config: AppConfig = DEFAULT_CONFIG,
 ): PolicyResult {
-    const securityYes = decisions.securityImpact.value >= 1;
     const action =
         confidence < config.confidence.threshold
             ? "REVIEW"
@@ -57,7 +60,7 @@ export function applyPolicy(
         action,
         recommendation: recommendationFor(
             action,
-            securityYes,
+            hasSecurityImpact(decisions),
             config.recommendations,
         ),
     };

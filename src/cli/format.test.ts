@@ -139,7 +139,13 @@ describe("formatAnalyze", () => {
         const scoredBlock = text.slice(scoredIdx, advisoryIdx);
         const advisoryBlock = text.slice(advisoryIdx);
         expect(scoredBlock).toContain("security");
-        expect(scoredBlock).toMatch(/\b100\b/);
+        expect(scoredBlock).toContain("database");
+        expect(scoredBlock).toContain("api");
+        expect(scoredBlock).toContain("authentication");
+        expect(scoredBlock).toMatch(/security[\s\S]*?\b100\b/);
+        expect(scoredBlock).toMatch(/database[\s\S]*?\b0\b/);
+        expect(scoredBlock).toMatch(/api[\s\S]*?\b100\b/);
+        expect(scoredBlock).toMatch(/authentication[\s\S]*?\b0\b/);
         expect(scoredBlock).not.toMatch(/\byes\b/);
         expect(scoredBlock).not.toContain("jev risk");
         expect(advisoryBlock).toContain("breaking change");

@@ -1,9 +1,32 @@
-import { choice } from "@typesafe-ai/sdk";
+import { choice, score } from "@typesafe-ai/sdk";
 
 const yesNo = {
     yes: "Yes",
     no: "No",
 } as const;
+
+const IMPACT_RUBRIC = [
+    "No impact",
+    null,
+    null,
+    null,
+    null,
+    "Moderate impact",
+    null,
+    null,
+    null,
+    null,
+    "Critical impact",
+] as const;
+
+export function scoreToImpact(rawScore: number): number {
+    const clamped = Math.min(10, Math.max(0, rawScore));
+    return Math.round(clamped * 10);
+}
+
+function impactScore(instructions: string) {
+    return score(instructions, IMPACT_RUBRIC);
+}
 
 export function buildJevQuestions() {
     return {
@@ -11,21 +34,17 @@ export function buildJevQuestions() {
             "Does this PR introduce a breaking change for consumers?",
             yesNo,
         ),
-        securityImpact: choice(
-            "Does this PR have a security impact that needs attention?",
-            yesNo,
+        securityImpact: impactScore(
+            "How severe is the security impact of this PR (0=none … 10=critical)?",
         ),
-        databaseChange: choice(
-            "Does this PR change database schema or migrations?",
-            yesNo,
+        databaseChange: impactScore(
+            "How severe is the database/schema impact of this PR (0=none … 10=critical)?",
         ),
-        apiImpact: choice(
-            "Does this PR change public API contracts?", 
-            yesNo
+        apiImpact: impactScore(
+            "How severe is the public API contract impact of this PR (0=none … 10=critical)?",
         ),
-        authenticationImpact: choice(
-            "Does this PR affect authentication or authorization?",
-            yesNo,
+        authenticationImpact: impactScore(
+            "How severe is the authentication/authorization impact of this PR (0=none … 10=critical)?",
         ),
         needsHumanReview: choice(
             "Should a human review this PR before merge?",

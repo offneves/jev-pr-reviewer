@@ -38,6 +38,11 @@ describe("createTypeSafeJevClient", () => {
                 instructions,
                 criteria,
             }),
+            score: (instructions: string, criteria: unknown[]) => ({
+                type: "score",
+                instructions,
+                criteria,
+            }),
         }));
 
         const { createTypeSafeJevClient: create } = await import(
@@ -67,6 +72,11 @@ describe("createTypeSafeJevClient", () => {
             },
             choice: (instructions: string, criteria: Record<string, unknown>) => ({
                 type: "choice",
+                instructions,
+                criteria,
+            }),
+            score: (instructions: string, criteria: unknown[]) => ({
+                type: "score",
                 instructions,
                 criteria,
             }),

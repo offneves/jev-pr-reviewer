@@ -8,7 +8,7 @@ import {
     type RiskLevel,
     type YesNo,
 } from "../schema.js";
-import { buildJevQuestions } from "./questions.js";
+import { buildJevQuestions, scoreToImpact } from "./questions.js";
 import type { JevClient } from "./types.js";
 
 function redactSecrets(message: string): string {
@@ -28,6 +28,13 @@ function asYesNo(value: string): YesNo {
 
 function asRiskLevel(value: string): RiskLevel {
     return RiskLevelSchema.parse(value);
+}
+
+function asImpact(rawScore: number, confidence: number) {
+    return {
+        value: scoreToImpact(rawScore),
+        confidence,
+    };
 }
 
 export function createTypeSafeJevClient(
@@ -63,25 +70,19 @@ export function createTypeSafeJevClient(
                         value: asYesNo(a.breakingChange.choice),
                         confidence: a.breakingChange.confidence,
                     },
-                    securityImpact: {
-                        value: asYesNo(a.securityImpact.choice) === "yes" ? 100 : 0,
-                        confidence: a.securityImpact.confidence,
-                    },
-                    databaseChange: {
-                        value: asYesNo(a.databaseChange.choice) === "yes" ? 100 : 0,
-                        confidence: a.databaseChange.confidence,
-                    },
-                    apiImpact: {
-                        value: asYesNo(a.apiImpact.choice) === "yes" ? 100 : 0,
-                        confidence: a.apiImpact.confidence,
-                    },
-                    authenticationImpact: {
-                        value:
-                            asYesNo(a.authenticationImpact.choice) === "yes"
-                                ? 100
-                                : 0,
-                        confidence: a.authenticationImpact.confidence,
-                    },
+                    securityImpact: asImpact(
+                        a.securityImpact.score,
+                        a.securityImpact.confidence,
+                    ),
+                    databaseChange: asImpact(
+                        a.databaseChange.score,
+                        a.databaseChange.confidence,
+                    ),
+                    apiImpact: asImpact(a.apiImpact.score, a.apiImpact.confidence),
+                    authenticationImpact: asImpact(
+                        a.authenticationImpact.score,
+                        a.authenticationImpact.confidence,
+                    ),
                     needsHumanReview: {
                         value: asYesNo(a.needsHumanReview.choice),
                         confidence: a.needsHumanReview.confidence,

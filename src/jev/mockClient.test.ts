@@ -30,6 +30,7 @@ describe("createMockJevClient", () => {
         const decisions = await client.evaluate(emptyState);
         expect(decisions.securityImpact.value).toBe(100);
         expect(decisions.securityImpact.confidence).toBe(0.95);
+        expect(typeof decisions.securityImpact.value).toBe("number");
         expect(decisions.riskLevel.value).toBe("CRITICAL");
     });
 });

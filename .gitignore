@@ -1,6 +1,10 @@
 node_modules/
 dist/
+coverage/
+*.tsbuildinfo
 .env
+.env.*
+!.env.example
+jev-pr-reviewer.config.json
 *.log
 .DS_Store
-.specs

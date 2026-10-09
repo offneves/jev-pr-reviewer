@@ -64,19 +64,22 @@ export function createTypeSafeJevClient(
                         confidence: a.breakingChange.confidence,
                     },
                     securityImpact: {
-                        value: asYesNo(a.securityImpact.choice),
+                        value: asYesNo(a.securityImpact.choice) === "yes" ? 100 : 0,
                         confidence: a.securityImpact.confidence,
                     },
                     databaseChange: {
-                        value: asYesNo(a.databaseChange.choice),
+                        value: asYesNo(a.databaseChange.choice) === "yes" ? 100 : 0,
                         confidence: a.databaseChange.confidence,
                     },
                     apiImpact: {
-                        value: asYesNo(a.apiImpact.choice),
+                        value: asYesNo(a.apiImpact.choice) === "yes" ? 100 : 0,
                         confidence: a.apiImpact.confidence,
                     },
                     authenticationImpact: {
-                        value: asYesNo(a.authenticationImpact.choice),
+                        value:
+                            asYesNo(a.authenticationImpact.choice) === "yes"
+                                ? 100
+                                : 0,
                         confidence: a.authenticationImpact.confidence,
                     },
                     needsHumanReview: {

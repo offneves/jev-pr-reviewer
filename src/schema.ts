@@ -3,6 +3,9 @@ import { z } from "zod";
 export const YesNoSchema = z.enum(["yes", "no"]);
 export type YesNo = z.infer<typeof YesNoSchema>;
 
+export const ImpactSchema = z.number().int().min(0).max(100);
+export type Impact = z.infer<typeof ImpactSchema>;
+
 export const RiskLevelSchema = z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 export type RiskLevel = z.infer<typeof RiskLevelSchema>;
 
@@ -24,10 +27,10 @@ export type PrState = z.infer<typeof PrStateSchema>;
 
 export const JevDecisionsSchema = z.object({
     breakingChange: DecisionSchema(YesNoSchema),
-    securityImpact: DecisionSchema(YesNoSchema),
-    databaseChange: DecisionSchema(YesNoSchema),
-    apiImpact: DecisionSchema(YesNoSchema),
-    authenticationImpact: DecisionSchema(YesNoSchema),
+    securityImpact: DecisionSchema(ImpactSchema),
+    databaseChange: DecisionSchema(ImpactSchema),
+    apiImpact: DecisionSchema(ImpactSchema),
+    authenticationImpact: DecisionSchema(ImpactSchema),
     needsHumanReview: DecisionSchema(YesNoSchema),
     riskLevel: DecisionSchema(RiskLevelSchema),
 });

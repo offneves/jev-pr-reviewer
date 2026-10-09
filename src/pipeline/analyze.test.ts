@@ -24,12 +24,12 @@ describe("analyzeDiff", () => {
             const result = await analyzeDiff(
                 path,
                 createMockJevClient({
-                    securityImpact: { value: "yes", confidence: 0.9 },
+                    securityImpact: { value: 100, confidence: 0.9 },
                 }),
             );
             expect(() => AnalysisResultSchema.parse(result)).not.toThrow();
             expect(result.state.additions).toBe(2);
-            expect(result.decisions.securityImpact.value).toBe("yes");
+            expect(result.decisions.securityImpact.value).toBe(100);
             expect(result.score).toBeGreaterThanOrEqual(0);
             expect(["APPROVE", "REVIEW", "BLOCK"]).toContain(result.action);
         } finally {

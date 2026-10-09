@@ -24,11 +24,11 @@ describe("createMockJevClient", () => {
 
     it("applies configurable overrides without network", async () => {
         const client = createMockJevClient({
-            securityImpact: { value: "yes", confidence: 0.95 },
+            securityImpact: { value: 100, confidence: 0.95 },
             riskLevel: { value: "CRITICAL", confidence: 0.88 },
         });
         const decisions = await client.evaluate(emptyState);
-        expect(decisions.securityImpact.value).toBe("yes");
+        expect(decisions.securityImpact.value).toBe(100);
         expect(decisions.securityImpact.confidence).toBe(0.95);
         expect(decisions.riskLevel.value).toBe("CRITICAL");
     });

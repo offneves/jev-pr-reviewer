@@ -101,7 +101,7 @@ jev-pr-reviewer mr 123 --mock --explain
 ### Ativar um arquivo de config
 
 ```bash
-cp jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
+cp config/jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
 ```
 
 Edite `jev-pr-reviewer.config.json`. Campos que você omitir usam o default embutido.
@@ -228,7 +228,7 @@ npm run demo:explain
 ### 2. Usar sua política JSON
 
 ```bash
-cp jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
+cp config/jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
 # edite pesos / faixas / etc.
 
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock
@@ -296,5 +296,7 @@ src/risk/         # calculator + policy
 src/pipeline/     # analyzeDiff (orquestra o fluxo)
 src/git/          # fetch de MR GitLab
 fixtures/         # diffs de exemplo
-jev-pr-reviewer.config.example.json
+config/           # example de política JSON
+docs/plans/       # planos de feature
+tests/            # Vitest (espelha src/)
 ```

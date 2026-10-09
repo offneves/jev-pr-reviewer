@@ -2,12 +2,12 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG } from "./defaults.js";
+import { DEFAULT_CONFIG } from "../../src/config/defaults.js";
 import {
     ConfigError,
     DEFAULT_CONFIG_FILENAME,
     loadConfig,
-} from "./loadConfig.js";
+} from "../../src/config/loadConfig.js";
 
 describe("loadConfig", () => {
     it("returns built-in defaults when no config file exists", async () => {

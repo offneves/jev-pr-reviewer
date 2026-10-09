@@ -7,7 +7,7 @@ import {
     DiffFileError,
     buildStateFromDiffFile,
     buildStateFromDiffText,
-} from "./buildState.js";
+} from "../../src/state/buildState.js";
 
 const SAMPLE = `diff --git a/src/foo.ts b/src/foo.ts
 index 111..222 100644

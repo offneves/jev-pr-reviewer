@@ -2,9 +2,9 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { AnalysisResultSchema } from "../schema.js";
-import { createMockJevClient } from "../jev/mockClient.js";
-import { analyzeDiff } from "./analyze.js";
+import { AnalysisResultSchema } from "../../src/schema.js";
+import { createMockJevClient } from "../../src/jev/mockClient.js";
+import { analyzeDiff } from "../../src/pipeline/analyze.js";
 
 const SAMPLE = `diff --git a/src/foo.ts b/src/foo.ts
 --- a/src/foo.ts

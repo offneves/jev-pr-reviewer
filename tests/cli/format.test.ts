@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { AnalysisResultSchema, type AnalysisResult } from "../schema.js";
+import { AnalysisResultSchema, type AnalysisResult } from "../../src/schema.js";
 import {
     DisplayConfigError,
     formatAnalyze,
@@ -11,7 +11,7 @@ import {
     loadDisplayConfig,
     resetDisplayConfigCache,
     type DisplayConfig,
-} from "./format.js";
+} from "../../src/cli/format.js";
 
 function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     return AnalysisResultSchema.parse({

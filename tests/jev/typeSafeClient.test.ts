@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { JEV_DECISION_KEYS } from "./questions.js";
-import { createTypeSafeJevClient } from "./typeSafeClient.js";
+import { JEV_DECISION_KEYS } from "../../src/jev/questions.js";
+import { createTypeSafeJevClient } from "../../src/jev/typeSafeClient.js";
 
 describe("createTypeSafeJevClient", () => {
     it("fails with a clear message when TYPESAFE_API_KEY is missing", () => {
@@ -8,7 +8,9 @@ describe("createTypeSafeJevClient", () => {
     });
 
     it("builds questions covering all decision keys", async () => {
-        const { buildJevQuestions } = await import("./questions.js");
+        const { buildJevQuestions } = await import(
+            "../../src/jev/questions.js"
+        );
         const questions = buildJevQuestions();
         for (const key of JEV_DECISION_KEYS) {
             expect(questions).toHaveProperty(key);
@@ -46,7 +48,7 @@ describe("createTypeSafeJevClient", () => {
         }));
 
         const { createTypeSafeJevClient: create } = await import(
-            "./typeSafeClient.js"
+            "../../src/jev/typeSafeClient.js"
         );
         const client = create({ TYPESAFE_API_KEY: "test-key" });
         await expect(
@@ -93,7 +95,7 @@ describe("createTypeSafeJevClient", () => {
         }));
 
         const { createTypeSafeJevClient: create } = await import(
-            "./typeSafeClient.js"
+            "../../src/jev/typeSafeClient.js"
         );
         const client = create({ TYPESAFE_API_KEY: "test-key" });
         const decisions = await client.evaluate({
@@ -132,7 +134,7 @@ describe("createTypeSafeJevClient", () => {
         }));
 
         const { createTypeSafeJevClient: create } = await import(
-            "./typeSafeClient.js"
+            "../../src/jev/typeSafeClient.js"
         );
         const client = create({ TYPESAFE_API_KEY: "sk-secret-value" });
         await expect(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JevDecisionsSchema } from "./schema.js";
+import { JevDecisionsSchema } from "../src/schema.js";
 
 const base = {
     breakingChange: { value: "no" as const, confidence: 0.9 },

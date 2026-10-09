@@ -1,5 +1,5 @@
 {
-    "_docs": "Este arquivo controla a POLÍTICA DE RISCO no código da aplicação. Copie para jev-pr-reviewer.config.json e ajuste. Campos description/_docs são só documentação e são ignorados no cálculo.",
+    "_docs": "Este arquivo controla a POLÍTICA DE RISCO no código da aplicação. Copie para a raiz do projeto como jev-pr-reviewer.config.json (cp config/jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json) e ajuste. Campos description/_docs são só documentação e são ignorados no cálculo.",
     "diff": {
         "description": "Limite do texto do diff guardado no state e enviado ao JEV. Se o arquivo for maior, o texto é cortado e truncated=true.",
         "maxChars": 80000

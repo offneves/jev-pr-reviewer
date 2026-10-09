@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { fetchMrDiff, MrDiffError } from "./fetchMrDiff.js";
-import type { CommandResult, RunCommand } from "./runCommand.js";
+import { fetchMrDiff, MrDiffError } from "../../src/git/fetchMrDiff.js";
+import type { CommandResult, RunCommand } from "../../src/git/runCommand.js";
 
 function mockRun(
     handlers: Record<string, () => CommandResult | Promise<CommandResult>>,

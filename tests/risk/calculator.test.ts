@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CONFIG } from "../config/defaults.js";
-import type { AppConfig } from "../config/schema.js";
-import type { JevDecisions, PrState } from "../schema.js";
-import { calculateRisk } from "./calculator.js";
-import { aggregateConfidence, applyPolicy } from "./policy.js";
+import { DEFAULT_CONFIG } from "../../src/config/defaults.js";
+import type { AppConfig } from "../../src/config/schema.js";
+import type { JevDecisions, PrState } from "../../src/schema.js";
+import { calculateRisk } from "../../src/risk/calculator.js";
+import { aggregateConfidence, applyPolicy } from "../../src/risk/policy.js";
 
 function decisions(partial: Partial<JevDecisions> = {}): JevDecisions {
     const base: JevDecisions = {

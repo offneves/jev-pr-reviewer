@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 describe("jev-pr-reviewer.config.example.json", () => {
     it("documents relative weights and weighted-average scoring", async () => {
         const text = await readFile(
-            resolve(process.cwd(), "jev-pr-reviewer.config.example.json"),
+            resolve(
+                process.cwd(),
+                "config/jev-pr-reviewer.config.example.json",
+            ),
             "utf8",
         );
         expect(text).toMatch(/weights/i);

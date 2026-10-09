@@ -8,10 +8,10 @@ import { aggregateConfidence, applyPolicy } from "./policy.js";
 function decisions(partial: Partial<JevDecisions> = {}): JevDecisions {
     const base: JevDecisions = {
         breakingChange: { value: "no", confidence: 0.9 },
-        securityImpact: { value: "no", confidence: 0.9 },
-        databaseChange: { value: "no", confidence: 0.9 },
-        apiImpact: { value: "no", confidence: 0.9 },
-        authenticationImpact: { value: "no", confidence: 0.9 },
+        securityImpact: { value: 0, confidence: 0.9 },
+        databaseChange: { value: 0, confidence: 0.9 },
+        apiImpact: { value: 0, confidence: 0.9 },
+        authenticationImpact: { value: 0, confidence: 0.9 },
         needsHumanReview: { value: "no", confidence: 0.9 },
         riskLevel: { value: "LOW", confidence: 0.9 },
     };
@@ -38,10 +38,10 @@ describe("calculateRisk", () => {
                 deletions: 110,
             }),
             decisions({
-                securityImpact: { value: "yes", confidence: 0.9 },
-                databaseChange: { value: "yes", confidence: 0.9 },
-                apiImpact: { value: "yes", confidence: 0.9 },
-                authenticationImpact: { value: "yes", confidence: 0.9 },
+                securityImpact: { value: 100, confidence: 0.9 },
+                databaseChange: { value: 100, confidence: 0.9 },
+                apiImpact: { value: 100, confidence: 0.9 },
+                authenticationImpact: { value: 100, confidence: 0.9 },
             }),
         );
         expect(breakdown.score).toBe(100);
@@ -56,10 +56,10 @@ describe("calculateRisk", () => {
                 deletions: 0,
             }),
             decisions({
-                securityImpact: { value: "yes", confidence: 0.9 },
-                databaseChange: { value: "yes", confidence: 0.9 },
-                apiImpact: { value: "yes", confidence: 0.9 },
-                authenticationImpact: { value: "yes", confidence: 0.9 },
+                securityImpact: { value: 100, confidence: 0.9 },
+                databaseChange: { value: 100, confidence: 0.9 },
+                apiImpact: { value: 100, confidence: 0.9 },
+                authenticationImpact: { value: 100, confidence: 0.9 },
             }),
         );
         expect(breakdown.score).toBe(100);
@@ -73,7 +73,7 @@ describe("calculateRisk", () => {
 
         const medium = calculateRisk(
             state(),
-            decisions({ securityImpact: { value: "yes", confidence: 0.9 } }),
+            decisions({ securityImpact: { value: 100, confidence: 0.9 } }),
         );
         expect(medium.score).toBe(35);
         expect(medium.riskLevel).toBe("MEDIUM");
@@ -81,9 +81,9 @@ describe("calculateRisk", () => {
         const high = calculateRisk(
             state(),
             decisions({
-                securityImpact: { value: "yes", confidence: 0.9 },
-                databaseChange: { value: "yes", confidence: 0.9 },
-                apiImpact: { value: "yes", confidence: 0.9 },
+                securityImpact: { value: 100, confidence: 0.9 },
+                databaseChange: { value: 100, confidence: 0.9 },
+                apiImpact: { value: 100, confidence: 0.9 },
             }),
         );
         expect(high.score).toBe(75);
@@ -95,10 +95,10 @@ describe("calculateRisk", () => {
                 additions: 201,
             }),
             decisions({
-                securityImpact: { value: "yes", confidence: 0.9 },
-                databaseChange: { value: "yes", confidence: 0.9 },
-                apiImpact: { value: "yes", confidence: 0.9 },
-                authenticationImpact: { value: "yes", confidence: 0.9 },
+                securityImpact: { value: 100, confidence: 0.9 },
+                databaseChange: { value: 100, confidence: 0.9 },
+                apiImpact: { value: 100, confidence: 0.9 },
+                authenticationImpact: { value: 100, confidence: 0.9 },
             }),
         );
         expect(critical.score).toBe(100);
@@ -114,7 +114,7 @@ describe("applyPolicy", () => {
         expect(lowPolicy.recommendation).toBe("Automatic approval possible");
 
         const medDec = decisions({
-            securityImpact: { value: "yes", confidence: 0.9 },
+            securityImpact: { value: 100, confidence: 0.9 },
         });
         const medBreakdown = calculateRisk(state(), medDec);
         expect(medBreakdown.riskLevel).toBe("MEDIUM");
@@ -123,9 +123,9 @@ describe("applyPolicy", () => {
         expect(medPolicy.recommendation).toBe("Security review required");
 
         const highNoSec = decisions({
-            databaseChange: { value: "yes", confidence: 0.9 },
-            apiImpact: { value: "yes", confidence: 0.9 },
-            authenticationImpact: { value: "yes", confidence: 0.9 },
+            databaseChange: { value: 100, confidence: 0.9 },
+            apiImpact: { value: 100, confidence: 0.9 },
+            authenticationImpact: { value: 100, confidence: 0.9 },
         });
         const highBreakdown = calculateRisk(
             state({
@@ -142,10 +142,10 @@ describe("applyPolicy", () => {
 
     it("maps CRITICAL with high confidence to BLOCK and security phrase", () => {
         const d = decisions({
-            securityImpact: { value: "yes", confidence: 0.96 },
-            databaseChange: { value: "yes", confidence: 0.96 },
-            apiImpact: { value: "yes", confidence: 0.96 },
-            authenticationImpact: { value: "yes", confidence: 0.96 },
+            securityImpact: { value: 100, confidence: 0.96 },
+            databaseChange: { value: 100, confidence: 0.96 },
+            apiImpact: { value: 100, confidence: 0.96 },
+            authenticationImpact: { value: 100, confidence: 0.96 },
             breakingChange: { value: "no", confidence: 0.96 },
             needsHumanReview: { value: "yes", confidence: 0.96 },
             riskLevel: { value: "CRITICAL", confidence: 0.96 },
@@ -166,10 +166,10 @@ describe("applyPolicy", () => {
 
     it("forces REVIEW when aggregated confidence is below 0.70", () => {
         const d = decisions({
-            securityImpact: { value: "yes", confidence: 0.52 },
-            databaseChange: { value: "yes", confidence: 0.52 },
-            apiImpact: { value: "yes", confidence: 0.52 },
-            authenticationImpact: { value: "yes", confidence: 0.52 },
+            securityImpact: { value: 100, confidence: 0.52 },
+            databaseChange: { value: 100, confidence: 0.52 },
+            apiImpact: { value: 100, confidence: 0.52 },
+            authenticationImpact: { value: 100, confidence: 0.52 },
             breakingChange: { value: "no", confidence: 0.52 },
             needsHumanReview: { value: "yes", confidence: 0.52 },
             riskLevel: { value: "CRITICAL", confidence: 0.52 },
@@ -201,7 +201,7 @@ describe("applyPolicy", () => {
             },
         };
         const d = decisions({
-            securityImpact: { value: "yes", confidence: 0.9 },
+            securityImpact: { value: 100, confidence: 0.9 },
         });
         const breakdown = calculateRisk(state(), d, config);
         expect(breakdown.score).toBe(10);
@@ -224,10 +224,10 @@ describe("applyPolicy", () => {
         const reviewPolicy = applyPolicy(
             calculateRisk(
                 state(),
-                decisions({ apiImpact: { value: "yes", confidence: 0.9 } }),
+                decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
                 medConfig,
             ),
-            decisions({ apiImpact: { value: "yes", confidence: 0.9 } }),
+            decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
             0.9,
             medConfig,
         );
@@ -276,7 +276,7 @@ describe("applyPolicy", () => {
         };
         const breakdown = calculateRisk(
             state(),
-            decisions({ apiImpact: { value: "yes", confidence: 0.9 } }),
+            decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
             config,
         );
         expect(breakdown.score).toBe(15);
@@ -291,10 +291,10 @@ describe("applyPolicy", () => {
             confidence: { threshold: 0.95 },
         };
         const d = decisions({
-            securityImpact: { value: "yes", confidence: 0.9 },
-            databaseChange: { value: "yes", confidence: 0.9 },
-            apiImpact: { value: "yes", confidence: 0.9 },
-            authenticationImpact: { value: "yes", confidence: 0.9 },
+            securityImpact: { value: 100, confidence: 0.9 },
+            databaseChange: { value: 100, confidence: 0.9 },
+            apiImpact: { value: 100, confidence: 0.9 },
+            authenticationImpact: { value: 100, confidence: 0.9 },
             breakingChange: { value: "no", confidence: 0.9 },
             needsHumanReview: { value: "yes", confidence: 0.9 },
             riskLevel: { value: "CRITICAL", confidence: 0.9 },

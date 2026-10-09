@@ -47,7 +47,7 @@ export function applyPolicy(
     confidence: number,
     config: AppConfig = DEFAULT_CONFIG,
 ): PolicyResult {
-    const securityYes = decisions.securityImpact.value === "yes";
+    const securityYes = decisions.securityImpact.value >= 1;
     const action =
         confidence < config.confidence.threshold
             ? "REVIEW"

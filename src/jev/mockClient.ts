@@ -1,5 +1,6 @@
 import {
     JevDecisionsSchema,
+    type Impact,
     type JevDecisions,
     type YesNo,
     type RiskLevel,
@@ -14,15 +15,15 @@ type DecisionOverrides = {
 
 const DEFAULTS: JevDecisions = {
     breakingChange: { value: "no", confidence: 0.9 },
-    securityImpact: { value: "no", confidence: 0.9 },
-    databaseChange: { value: "no", confidence: 0.9 },
-    apiImpact: { value: "no", confidence: 0.9 },
-    authenticationImpact: { value: "no", confidence: 0.9 },
+    securityImpact: { value: 0, confidence: 0.9 },
+    databaseChange: { value: 0, confidence: 0.9 },
+    apiImpact: { value: 0, confidence: 0.9 },
+    authenticationImpact: { value: 0, confidence: 0.9 },
     needsHumanReview: { value: "no", confidence: 0.9 },
     riskLevel: { value: "LOW", confidence: 0.9 },
 };
 
-function mergeDecision<T extends YesNo | RiskLevel>(
+function mergeDecision<T extends YesNo | RiskLevel | Impact>(
     base: { value: T; confidence: number },
     override?: Partial<{ value: T; confidence: number }>,
 ): { value: T; confidence: number } {
@@ -38,19 +39,19 @@ const PROFILES: Record<MockProfile, DecisionOverrides> = {
     default: {},
     busy: {
         breakingChange: { value: "yes", confidence: 0.82 },
-        securityImpact: { value: "yes", confidence: 0.88 },
-        databaseChange: { value: "yes", confidence: 0.91 },
-        apiImpact: { value: "yes", confidence: 0.86 },
-        authenticationImpact: { value: "yes", confidence: 0.84 },
+        securityImpact: { value: 70, confidence: 0.88 },
+        databaseChange: { value: 60, confidence: 0.91 },
+        apiImpact: { value: 55, confidence: 0.86 },
+        authenticationImpact: { value: 50, confidence: 0.84 },
         needsHumanReview: { value: "yes", confidence: 0.93 },
         riskLevel: { value: "HIGH", confidence: 0.87 },
     },
     critical: {
         breakingChange: { value: "yes", confidence: 0.96 },
-        securityImpact: { value: "yes", confidence: 0.97 },
-        databaseChange: { value: "yes", confidence: 0.95 },
-        apiImpact: { value: "yes", confidence: 0.94 },
-        authenticationImpact: { value: "yes", confidence: 0.96 },
+        securityImpact: { value: 95, confidence: 0.97 },
+        databaseChange: { value: 90, confidence: 0.95 },
+        apiImpact: { value: 85, confidence: 0.94 },
+        authenticationImpact: { value: 90, confidence: 0.96 },
         needsHumanReview: { value: "yes", confidence: 0.98 },
         riskLevel: { value: "CRITICAL", confidence: 0.97 },
     },

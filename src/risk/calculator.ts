@@ -73,18 +73,18 @@ export function calculateRisk(
     const contributions: ScoreContribution[] = [
         yesPoints(
             "security",
-            decisions.securityImpact.value === "yes",
+            decisions.securityImpact.value >= 1,
             weights.security,
         ),
         yesPoints(
             "database",
-            decisions.databaseChange.value === "yes",
+            decisions.databaseChange.value >= 1,
             weights.database,
         ),
-        yesPoints("api", decisions.apiImpact.value === "yes", weights.api),
+        yesPoints("api", decisions.apiImpact.value >= 1, weights.api),
         yesPoints(
             "authentication",
-            decisions.authenticationImpact.value === "yes",
+            decisions.authenticationImpact.value >= 1,
             weights.authentication,
         ),
         pointsFromTiers(state.files.length, files.tiers, "files"),

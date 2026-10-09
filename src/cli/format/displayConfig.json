@@ -49,17 +49,13 @@
                 "security",
                 "database",
                 "api",
-                "authentication",
-                "files",
-                "lines"
+                "authentication"
             ],
             "labels": {
                 "security": "security",
                 "database": "database",
                 "api": "api",
-                "authentication": "authentication",
-                "files": "files",
-                "lines": "lines"
+                "authentication": "authentication"
             }
         }
     }

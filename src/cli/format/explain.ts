@@ -52,14 +52,16 @@ export function formatExplain(
 
     for (const c of contributions) {
         const barWidth = 16;
-        const filled = Math.round((c.points / maxPoints) * barWidth);
+        const filled = Math.round((c.points / Math.max(maxPoints, 100)) * barWidth);
         const bar = `${"▓".repeat(filled)}${"░".repeat(barWidth - filled)}`;
-        const points = paint(
-            `+${c.points}`.padStart(3, " "),
+        const impact = paint(
+            String(c.points).padStart(3, " "),
             c.points > 0 ? YELLOW : DIM,
         );
         const label = padLabel(labelForSignal(c.signal, display), labelWidth);
-        lines.push(`  ${paint(label, DIM)}  ${points}  ${paint(bar, DIM)}  ${paint(c.detail, DIM)}`);
+        lines.push(
+            `  ${paint(label, DIM)}  ${impact}  ${paint(bar, DIM)}  ${paint(c.detail, DIM)}`,
+        );
     }
 
     lines.push("");

@@ -57,8 +57,12 @@ export function valueTone(value: string): string {
     if (value === "yes" || value === "CRITICAL" || value === "HIGH") {
         return YELLOW;
     }
-    if (value === "no") {
+    if (value === "no" || value === "0") {
         return DIM;
+    }
+    const asNum = Number(value);
+    if (!Number.isNaN(asNum) && asNum >= 1) {
+        return YELLOW;
     }
     return WHITE;
 }

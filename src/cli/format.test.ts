@@ -37,12 +37,14 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
         action: "REVIEW",
         recommendation: "Security review required",
         contributions: [
-            { signal: "security", points: 35, detail: "security = yes (+35)" },
-            { signal: "api", points: 15, detail: "api = yes (+15)" },
-            { signal: "files", points: 0, detail: "1 files (≤3)" },
-            { signal: "lines", points: 0, detail: "4 lines (≤50)" },
-            { signal: "database", points: 0, detail: "database = no" },
-            { signal: "authentication", points: 0, detail: "authentication = no" },
+            { signal: "security", points: 100, detail: "impact 100 (weight 5)" },
+            { signal: "database", points: 0, detail: "impact 0 (weight 3)" },
+            { signal: "api", points: 100, detail: "impact 100 (weight 2)" },
+            {
+                signal: "authentication",
+                points: 0,
+                detail: "impact 0 (weight 1)",
+            },
         ],
         ...overrides,
     });
@@ -95,21 +97,12 @@ function baseDisplay(overrides: Partial<DisplayConfig> = {}): DisplayConfig {
                 riskLevel: "Risk level:",
             },
             signals: {
-                order: [
-                    "security",
-                    "database",
-                    "api",
-                    "authentication",
-                    "files",
-                    "lines",
-                ],
+                order: ["security", "database", "api", "authentication"],
                 labels: {
                     security: "security",
                     database: "database",
                     api: "api",
                     authentication: "authentication",
-                    files: "files",
-                    lines: "lines",
                 },
             },
         },
@@ -146,6 +139,8 @@ describe("formatAnalyze", () => {
         const scoredBlock = text.slice(scoredIdx, advisoryIdx);
         const advisoryBlock = text.slice(advisoryIdx);
         expect(scoredBlock).toContain("security");
+        expect(scoredBlock).toMatch(/\b100\b/);
+        expect(scoredBlock).not.toMatch(/\byes\b/);
         expect(scoredBlock).not.toContain("jev risk");
         expect(advisoryBlock).toContain("breaking change");
         expect(advisoryBlock).toContain("human review");
@@ -182,10 +177,12 @@ describe("formatAnalyze", () => {
 });
 
 describe("formatExplain", () => {
-    it("lists contribution points and total score with shared layout markers", () => {
+    it("lists contribution impact, weight, and total score", () => {
         const result = sampleResult();
         const text = formatExplain(result, baseDisplay());
-        expect(text).toContain("+35");
+        expect(text).toMatch(/\b100\b/);
+        expect(text).toContain("weight 5");
+        expect(text).toContain("impact 100");
         expect(text).toContain(`Total score: ${result.score}`);
         expect(text).toContain("Score breakdown");
         expect(text).toContain("Contributions");
@@ -195,20 +192,16 @@ describe("formatExplain", () => {
     it("preserves display signal order even when points would sort differently", () => {
         const display = baseDisplay();
         display.explain.signals.order = [
-            "files",
+            "api",
             "security",
             "database",
-            "api",
             "authentication",
-            "lines",
         ];
-        display.explain.signals.labels.files = "Arquivos";
 
         const text = formatExplain(sampleResult(), display);
-        expect(text).toContain("Arquivos");
         const afterContributions = text.slice(text.indexOf("Contributions"));
-        expect(afterContributions.indexOf("Arquivos")).toBeLessThan(
-            afterContributions.indexOf("security = yes"),
+        expect(afterContributions.indexOf("api")).toBeLessThan(
+            afterContributions.indexOf("security"),
         );
     });
 });

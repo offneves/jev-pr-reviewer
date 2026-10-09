@@ -8,14 +8,7 @@ Objetivo do experimento: separar o que o modelo decide (confiança) do que a apl
 
 ## Por que JEV?
 
-JEV (TypeSafe) responde as perguntas estruturadas sobre o diff, por exemplo:
-
-- há impacto de segurança?
-- há mudança de banco?
-- há impacto de API?
-- há impacto de autenticação?
-
-Cada resposta vem com `yes`/`no` e uma confiança (0–1).
+JEV (TypeSafe) responde perguntas estruturadas sobre o diff. Nos eixos que entram no score (security, database, api, authentication) a resposta é um **impacto 0–100** (via rubrica `score` 0–10 mapeada ×10), cada uma com confiança (0–1). Campos advisory (`breakingChange`, `needsHumanReview`, `riskLevel`) continuam choice/yes-no ou níveis.
 
 O modelo **não** define pesos, faixas nem se o PR deve ser aprovado. Isso fica no código / no arquivo JSON de política. Assim você pode mudar a regra de negócio sem reescrever o prompt, e o comportamento da política fica testável e previsível.
 
@@ -41,7 +34,7 @@ Mock embutido (`--mock`) permite rodar sem rede e sem API key para visualizar o 
 1. Lê um arquivo `.diff` (local ou baixado de um MR).
 2. Monta o **state**: lista de arquivos, additions, deletions, texto do diff (com teto de tamanho).
 3. Envia o state ao **JEV** (real ou mock) e recebe as decisões.
-4. **Risk calculator** soma pontos (pesos + faixas de arquivos/linhas) → score 0–100 → nível LOW…CRITICAL.
+4. **Risk calculator** faz a **média ponderada** dos impactos 0–100 com pesos relativos do JSON → score 0–100 → nível LOW…CRITICAL.
 5. **Review policy** transforma nível (+ gate de confiança) em ação e texto de recommendation.
 6. Imprime relatório legível ou JSON.
 
@@ -136,44 +129,30 @@ Tamanho máximo do **texto bruto** do `.diff` guardado no state e enviado ao JEV
 - **Não** é “caracteres alterados” e **não** soma pontos no score.
 - Serve para limitar contexto/custo/latência do modelo.
 
-#### `weights` (pontos se o JEV disser yes)
+#### `weights` (importância relativa na média)
 
-Número = pontos somados ao score. Se a decisão for `no`, contribui 0.
+Não são pontos somados. O score é:
+
+```text
+score = round( sum(impact_i * weight_i) / sum(weight_i) )
+```
 
 | Campo | Default | Significado |
 |-------|---------|-------------|
-| `security` | 35 | Impacto de segurança = yes → +35 |
-| `database` | 25 | Mudança de banco = yes → +25 |
-| `api` | 15 | Impacto de API = yes → +15 |
-| `authentication` | 10 | Impacto de auth = yes → +10 |
+| `security` | 5 | Peso relativo do impacto de segurança |
+| `database` | 3 | Peso relativo do impacto de banco |
+| `api` | 2 | Peso relativo do impacto de API |
+| `authentication` | 1 | Peso relativo do impacto de auth |
 
-Quanto maior o número, mais aquele sinal empurra o risco.
+Quanto maior o peso, mais aquele eixo puxa a média. Pelo menos um peso deve ser > 0. **Breaking change:** configs antigas com 35/25/15/10 ainda carregam, mas a semântica agora é relativa (não “+35 no score”).
 
-#### `files.tiers` (pontos pelo número de arquivos)
+#### `files.tiers` / `lines.tiers`
 
-Métrica do state (`files.length`), não do JEV.
-
-Default:
-
-- até 3 arquivos → 0
-- até 10 → 5
-- mais de 10 → 10
-
-Em cada tier: `max` = teto inclusivo; `above` = “maior que”; `points` = pontos somados.
-
-#### `lines.tiers` (pontos por linhas alteradas)
-
-Usa `additions + deletions` (linhas que começam com `+` ou `-` no diff).
-
-Default:
-
-- até 50 → 0
-- até 200 → 3
-- mais de 200 → 5
+Mantidos no JSON por compatibilidade. **Não entram no score** nesta versão (só métricas de state / truncagem). O score usa apenas os 4 impactos JEV.
 
 #### `levels` (score → faixa de risco)
 
-Depois da soma, o score é limitado a no máximo 100.
+Depois da média ponderada, o score fica em 0–100.
 
 | Score | Nível | Ação típica* |
 |-------|--------|----------------|
@@ -182,7 +161,7 @@ Depois da soma, o score é limitado a no máximo 100.
 | `mediumMax`+1 … `highMax` (80) | HIGH | REVIEW |
 | acima de `highMax` | CRITICAL | BLOCK |
 
-*Sujeito ao gate de confiança abaixo. Se `securityImpact=yes`, o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
+*Sujeito ao gate de confiança abaixo. Se `securityImpact >= 1`, o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
 
 #### `confidence.threshold` (default: 0.7)
 
@@ -194,9 +173,9 @@ Se a média for **estritamente menor** que o threshold, a ação vira **REVIEW**
 
 Não alteram o cálculo:
 
-- `approve` — ação APPROVE (e security ≠ yes)
+- `approve` — ação APPROVE (e security impact = 0)
 - `review` — ação REVIEW
-- `blockOrSecurity` — ação BLOCK, ou quando security = yes
+- `blockOrSecurity` — ação BLOCK, ou quando security impact ≥ 1
 
 #### `cli.defaultBaseBranch` (default: `main`)
 
@@ -204,7 +183,9 @@ Branch base preferida no fallback `git` do comando `mr` quando você não passa 
 
 ### Exemplo de score
 
-security=yes (+35) + 5 arquivos (+5) + 80 linhas (+3) = **43** → MEDIUM → REVIEW (se confiança ≥ threshold).
+impactos security=85, database=40, api=10, authentication=0 com pesos 5/3/2/1:
+
+`(85×5 + 40×3 + 10×2 + 0×1) / 11 ≈ 51.36` → score **51** → MEDIUM → REVIEW (se confiança ≥ threshold; recommendation de security porque impact ≥ 1).
 
 <br>
 
@@ -296,10 +277,10 @@ Arquivo: `src/cli/format/displayConfig.json`
 
 No `analyze` pretty:
 
-- **Scored decisions** — entram no calculator (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
+- **Scored decisions** — impactos 0–100 que entram na média (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
 - **Advisory · not in score** — opinião JEV que não pontua (`breakingChange`, `needsHumanReview`, `riskLevel`)
 
-Isso não muda pesos nem política (`jev-pr-reviewer.config.json`). Contributions no `explain` seguem `explain.signals.order` (sem reordenar por pontos).
+Contributions no `explain` mostram `impact N (weight W)` na ordem de `explain.signals.order` (sem reordenar por pontos).
 
 <br>
 

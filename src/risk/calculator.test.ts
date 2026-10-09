@@ -30,52 +30,77 @@ function state(partial: Partial<PrState> = {}): PrState {
 }
 
 describe("calculateRisk", () => {
-    it("sums discrete weights to the expected score and level", () => {
+    it("computes weighted average for the plan example → score 51", () => {
         const breakdown = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 100,
-                deletions: 110,
-            }),
+            state(),
             decisions({
-                securityImpact: { value: 100, confidence: 0.9 },
-                databaseChange: { value: 100, confidence: 0.9 },
-                apiImpact: { value: 100, confidence: 0.9 },
-                authenticationImpact: { value: 100, confidence: 0.9 },
+                securityImpact: { value: 85, confidence: 0.9 },
+                databaseChange: { value: 40, confidence: 0.9 },
+                apiImpact: { value: 10, confidence: 0.9 },
+                authenticationImpact: { value: 0, confidence: 0.9 },
             }),
         );
-        expect(breakdown.score).toBe(100);
-        expect(breakdown.riskLevel).toBe("CRITICAL");
+        // (85*5 + 40*3 + 10*2 + 0*1) / 11 = 565/11 ≈ 51.36 → 51
+        expect(breakdown.score).toBe(51);
+        expect(breakdown.riskLevel).toBe("MEDIUM");
+        expect(breakdown.contributions.map((c) => c.signal)).toEqual([
+            "security",
+            "database",
+            "api",
+            "authentication",
+        ]);
+        expect(
+            breakdown.contributions.find((c) => c.signal === "files"),
+        ).toBeUndefined();
+        expect(
+            breakdown.contributions.find((c) => c.signal === "lines"),
+        ).toBeUndefined();
     });
 
-    it("clamps score at 100 before level mapping", () => {
+    it("returns score 0 when all impacts are 0", () => {
+        const breakdown = calculateRisk(state(), decisions());
+        expect(breakdown.score).toBe(0);
+        expect(breakdown.riskLevel).toBe("LOW");
+    });
+
+    it("does not add files or lines into the score", () => {
         const breakdown = calculateRisk(
             state({
-                files: Array.from({ length: 12 }, (_, i) => `f${i}.ts`),
-                additions: 300,
-                deletions: 0,
+                files: Array.from({ length: 50 }, (_, i) => `f${i}.ts`),
+                additions: 5000,
+                deletions: 5000,
             }),
-            decisions({
-                securityImpact: { value: 100, confidence: 0.9 },
-                databaseChange: { value: 100, confidence: 0.9 },
-                apiImpact: { value: 100, confidence: 0.9 },
-                authenticationImpact: { value: 100, confidence: 0.9 },
-            }),
+            decisions(),
         );
-        expect(breakdown.score).toBe(100);
-        expect(breakdown.riskLevel).toBe("CRITICAL");
+        expect(breakdown.score).toBe(0);
+        expect(breakdown.contributions.every((c) => !["files", "lines"].includes(c.signal))).toBe(
+            true,
+        );
+    });
+
+    it("embeds impact and weight in contribution details", () => {
+        const breakdown = calculateRisk(
+            state(),
+            decisions({ securityImpact: { value: 85, confidence: 0.9 } }),
+        );
+        const security = breakdown.contributions.find((c) => c.signal === "security");
+        expect(security?.points).toBe(85);
+        expect(security?.detail).toMatch(/impact 85/);
+        expect(security?.detail).toMatch(/weight 5/);
     });
 
     it("maps score bands LOW / MEDIUM / HIGH / CRITICAL", () => {
-        const low = calculateRisk(state(), decisions());
-        expect(low.score).toBe(0);
-        expect(low.riskLevel).toBe("LOW");
+        expect(calculateRisk(state(), decisions()).riskLevel).toBe("LOW");
 
         const medium = calculateRisk(
             state(),
-            decisions({ securityImpact: { value: 100, confidence: 0.9 } }),
+            decisions({
+                securityImpact: { value: 85, confidence: 0.9 },
+                databaseChange: { value: 40, confidence: 0.9 },
+                apiImpact: { value: 10, confidence: 0.9 },
+            }),
         );
-        expect(medium.score).toBe(35);
+        expect(medium.score).toBe(51);
         expect(medium.riskLevel).toBe("MEDIUM");
 
         const high = calculateRisk(
@@ -84,16 +109,29 @@ describe("calculateRisk", () => {
                 securityImpact: { value: 100, confidence: 0.9 },
                 databaseChange: { value: 100, confidence: 0.9 },
                 apiImpact: { value: 100, confidence: 0.9 },
+                authenticationImpact: { value: 0, confidence: 0.9 },
             }),
         );
-        expect(high.score).toBe(75);
-        expect(high.riskLevel).toBe("HIGH");
+        // (100*5+100*3+100*2+0)/11 = 1000/11 ≈ 90.9 → 91 HIGH? highMax 80 → CRITICAL
+        expect(high.score).toBe(91);
+        expect(high.riskLevel).toBe("CRITICAL");
 
-        const critical = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 201,
+        const justHigh = calculateRisk(
+            state(),
+            decisions({
+                securityImpact: { value: 80, confidence: 0.9 },
+                databaseChange: { value: 80, confidence: 0.9 },
+                apiImpact: { value: 80, confidence: 0.9 },
+                authenticationImpact: { value: 80, confidence: 0.9 },
             }),
+        );
+        expect(justHigh.score).toBe(80);
+        expect(justHigh.riskLevel).toBe("HIGH");
+    });
+
+    it("clamps rounded average to 0..100", () => {
+        const breakdown = calculateRisk(
+            state(),
             decisions({
                 securityImpact: { value: 100, confidence: 0.9 },
                 databaseChange: { value: 100, confidence: 0.9 },
@@ -101,43 +139,43 @@ describe("calculateRisk", () => {
                 authenticationImpact: { value: 100, confidence: 0.9 },
             }),
         );
-        expect(critical.score).toBe(100);
-        expect(critical.riskLevel).toBe("CRITICAL");
+        expect(breakdown.score).toBe(100);
+        expect(breakdown.riskLevel).toBe("CRITICAL");
     });
 });
 
 describe("applyPolicy", () => {
-    it("maps LOW→APPROVE, MEDIUM→REVIEW, HIGH→REVIEW when confidence ≥ 0.70", () => {
+    it("maps LOW→APPROVE, MEDIUM→REVIEW when confidence ≥ 0.70", () => {
         const lowD = decisions();
         const lowPolicy = applyPolicy(calculateRisk(state(), lowD), lowD, 0.9);
         expect(lowPolicy.action).toBe("APPROVE");
         expect(lowPolicy.recommendation).toBe("Automatic approval possible");
 
         const medDec = decisions({
-            securityImpact: { value: 100, confidence: 0.9 },
+            securityImpact: { value: 85, confidence: 0.9 },
+            databaseChange: { value: 40, confidence: 0.9 },
+            apiImpact: { value: 10, confidence: 0.9 },
+            authenticationImpact: { value: 0, confidence: 0.9 },
         });
         const medBreakdown = calculateRisk(state(), medDec);
+        expect(medBreakdown.score).toBe(51);
         expect(medBreakdown.riskLevel).toBe("MEDIUM");
         const medPolicy = applyPolicy(medBreakdown, medDec, 0.9);
         expect(medPolicy.action).toBe("REVIEW");
         expect(medPolicy.recommendation).toBe("Security review required");
+    });
 
-        const highNoSec = decisions({
+    it("uses human review text when security impact is 0", () => {
+        const d = decisions({
             databaseChange: { value: 100, confidence: 0.9 },
             apiImpact: { value: 100, confidence: 0.9 },
             authenticationImpact: { value: 100, confidence: 0.9 },
         });
-        const highBreakdown = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 201,
-            }),
-            highNoSec,
-        );
-        expect(highBreakdown.riskLevel).toBe("HIGH");
-        const highPolicy = applyPolicy(highBreakdown, highNoSec, 0.9);
-        expect(highPolicy.action).toBe("REVIEW");
-        expect(highPolicy.recommendation).toBe("Human review recommended");
+        const breakdown = calculateRisk(state(), d);
+        expect(breakdown.score).toBeGreaterThan(30);
+        const policy = applyPolicy(breakdown, d, 0.9);
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.recommendation).toBe("Human review recommended");
     });
 
     it("maps CRITICAL with high confidence to BLOCK and security phrase", () => {
@@ -150,13 +188,7 @@ describe("applyPolicy", () => {
             needsHumanReview: { value: "yes", confidence: 0.96 },
             riskLevel: { value: "CRITICAL", confidence: 0.96 },
         });
-        const breakdown = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 201,
-            }),
-            d,
-        );
+        const breakdown = calculateRisk(state(), d);
         const confidence = aggregateConfidence(d);
         expect(confidence).toBeGreaterThanOrEqual(0.7);
         const policy = applyPolicy(breakdown, d, confidence);
@@ -174,25 +206,21 @@ describe("applyPolicy", () => {
             needsHumanReview: { value: "yes", confidence: 0.52 },
             riskLevel: { value: "CRITICAL", confidence: 0.52 },
         });
-        const breakdown = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 201,
-            }),
-            d,
-        );
+        const breakdown = calculateRisk(state(), d);
         const confidence = aggregateConfidence(d);
         expect(confidence).toBeLessThan(0.7);
         const policy = applyPolicy(breakdown, d, confidence);
         expect(policy.action).toBe("REVIEW");
     });
 
-    it("uses configured weights and recommendation strings", () => {
+    it("uses configured relative weights and recommendation strings", () => {
         const config: AppConfig = {
             ...DEFAULT_CONFIG,
             weights: {
-                ...DEFAULT_CONFIG.weights,
-                security: 10,
+                security: 1,
+                database: 0,
+                api: 0,
+                authentication: 0,
             },
             recommendations: {
                 approve: "OK to merge",
@@ -201,10 +229,10 @@ describe("applyPolicy", () => {
             },
         };
         const d = decisions({
-            securityImpact: { value: 100, confidence: 0.9 },
+            securityImpact: { value: 40, confidence: 0.9 },
         });
         const breakdown = calculateRisk(state(), d, config);
-        expect(breakdown.score).toBe(10);
+        expect(breakdown.score).toBe(40);
         const policy = applyPolicy(breakdown, d, 0.9, config);
         expect(policy.recommendation).toBe("Security hold");
 
@@ -216,57 +244,6 @@ describe("applyPolicy", () => {
         );
         expect(approvePolicy.action).toBe("APPROVE");
         expect(approvePolicy.recommendation).toBe("OK to merge");
-
-        const medConfig: AppConfig = {
-            ...config,
-            levels: { lowMax: 5, mediumMax: 20, highMax: 80 },
-        };
-        const reviewPolicy = applyPolicy(
-            calculateRisk(
-                state(),
-                decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
-                medConfig,
-            ),
-            decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
-            0.9,
-            medConfig,
-        );
-        expect(reviewPolicy.action).toBe("REVIEW");
-        expect(reviewPolicy.recommendation).toBe("Please look");
-    });
-
-    it("uses configured file and line tiers", () => {
-        const config: AppConfig = {
-            ...DEFAULT_CONFIG,
-            files: {
-                tiers: [
-                    { max: 1, points: 0 },
-                    { above: 1, points: 40 },
-                ],
-            },
-            lines: {
-                tiers: [
-                    { max: 10, points: 0 },
-                    { above: 10, points: 7 },
-                ],
-            },
-        };
-        const breakdown = calculateRisk(
-            state({
-                files: ["a.ts", "b.ts"],
-                additions: 20,
-                deletions: 0,
-            }),
-            decisions(),
-            config,
-        );
-        expect(breakdown.score).toBe(47);
-        expect(
-            breakdown.contributions.find((c) => c.signal === "files")?.points,
-        ).toBe(40);
-        expect(
-            breakdown.contributions.find((c) => c.signal === "lines")?.points,
-        ).toBe(7);
     });
 
     it("uses configured level bounds", () => {
@@ -276,11 +253,17 @@ describe("applyPolicy", () => {
         };
         const breakdown = calculateRisk(
             state(),
-            decisions({ apiImpact: { value: 100, confidence: 0.9 } }),
+            decisions({
+                securityImpact: { value: 0, confidence: 0.9 },
+                databaseChange: { value: 0, confidence: 0.9 },
+                apiImpact: { value: 33, confidence: 0.9 },
+                authenticationImpact: { value: 0, confidence: 0.9 },
+            }),
             config,
         );
-        expect(breakdown.score).toBe(15);
-        expect(breakdown.riskLevel).toBe("HIGH");
+        // (0+0+33*2+0)/11 ≈ 6 → MEDIUM with custom bounds? 6 > 5 and <= 10 → MEDIUM
+        expect(breakdown.score).toBe(6);
+        expect(breakdown.riskLevel).toBe("MEDIUM");
         const low = calculateRisk(state(), decisions(), config);
         expect(low.riskLevel).toBe("LOW");
     });
@@ -299,18 +282,19 @@ describe("applyPolicy", () => {
             needsHumanReview: { value: "yes", confidence: 0.9 },
             riskLevel: { value: "CRITICAL", confidence: 0.9 },
         });
-        const breakdown = calculateRisk(
-            state({
-                files: Array.from({ length: 11 }, (_, i) => `f${i}.ts`),
-                additions: 201,
-            }),
-            d,
-            config,
-        );
+        const breakdown = calculateRisk(state(), d, config);
         const confidence = aggregateConfidence(d);
         expect(confidence).toBeLessThan(0.95);
         expect(applyPolicy(breakdown, d, confidence, config).action).toBe(
             "REVIEW",
         );
+    });
+
+    it("treats securityImpact >= 1 like former security yes", () => {
+        const d = decisions({
+            securityImpact: { value: 1, confidence: 0.9 },
+        });
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.9);
+        expect(policy.recommendation).toBe("Security review required");
     });
 });

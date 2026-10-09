@@ -2,7 +2,6 @@ import { readFile } from "node:fs/promises";
 import { DEFAULT_CONFIG } from "../config/defaults.js";
 import { PrStateSchema, type PrState } from "../schema.js";
 
-/** @deprecated Prefer config.diff.maxChars — kept for call-site clarity in tests */
 export const DIFF_TEXT_LIMIT = DEFAULT_CONFIG.diff.maxChars;
 
 export class DiffFileError extends Error {

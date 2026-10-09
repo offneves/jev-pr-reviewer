@@ -47,7 +47,8 @@ describe("CLI", () => {
             await runCli(["analyze", path, "--mock"]);
             const out = logs.join("");
             expect(out).toMatch(/Risk/);
-            expect(out).toMatch(/Decisions/);
+            expect(out).toMatch(/Scored decisions/);
+            expect(out).toMatch(/Advisory/);
             expect(out).toMatch(/Action/);
             expect(out).toMatch(/PR Risk Analysis/);
         } finally {
@@ -56,7 +57,7 @@ describe("CLI", () => {
         }
     });
 
-    it("analyze --json emits schema-valid JSON", async () => {
+    it("analyze --json emits schema-valid JSON with score fields", async () => {
         const dir = await mkdtemp(join(tmpdir(), "jev-cli-json-"));
         const path = join(dir, "sample.diff");
         const logs: string[] = [];
@@ -70,8 +71,11 @@ describe("CLI", () => {
         try {
             await writeFile(path, SAMPLE, "utf8");
             await runCli(["analyze", path, "--json", "--mock"]);
-            const parsed = JSON.parse(logs.join(""));
-            expect(() => AnalysisResultSchema.parse(parsed)).not.toThrow();
+            const parsed = AnalysisResultSchema.parse(JSON.parse(logs.join("")));
+            expect(parsed.score).toBeTypeOf("number");
+            expect(parsed.riskLevel).toBeTruthy();
+            expect(parsed.action).toBeTruthy();
+            expect(parsed.contributions.length).toBeGreaterThan(0);
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

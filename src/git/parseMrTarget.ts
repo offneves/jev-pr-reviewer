@@ -1,20 +1,10 @@
 import { MrDiffError } from "./errors.js";
 
 export interface MrTarget {
-    /** Numeric MR iid */
     number: number;
-    /** Original input when it was a URL (passed to glab when possible) */
     ref: string;
 }
 
-/**
- * Accept a bare MR number or a GitLab merge request URL.
- *
- * Examples:
- * - 123
- * - https://gitlab.com/group/project/-/merge_requests/123
- * - https://gitlab.example.com/g/p/-/merge_requests/123/diffs
- */
 export function parseMrTarget(input: string): MrTarget {
     const trimmed = input.trim();
     if (!trimmed) {

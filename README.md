@@ -290,6 +290,19 @@ Base branch:
 
 <br>
 
+## Layout da saída CLI (display)
+
+Arquivo: `src/cli/format/displayConfig.json`
+
+No `analyze` pretty:
+
+- **Scored decisions** — entram no calculator (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
+- **Advisory · not in score** — opinião JEV que não pontua (`breakingChange`, `needsHumanReview`, `riskLevel`)
+
+Isso não muda pesos nem política (`jev-pr-reviewer.config.json`). Contributions no `explain` seguem `explain.signals.order` (sem reordenar por pontos).
+
+<br>
+
 ## Estrutura
 
 ```

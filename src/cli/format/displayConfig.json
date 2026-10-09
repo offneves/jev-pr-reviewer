@@ -1,30 +1,37 @@
 {
-    "_docs": "Labels e ordem da saída CLI. Não altera score nem política de risco.",
+    "_docs": "Labels e ordem da saída CLI. Não altera score nem política de risco. Scored = entra no calculator; Advisory = só opinião JEV.",
     "analyze": {
         "title": "jev-pr-reviewer · PR Risk Analysis",
         "sections": {
             "risk": "Risk",
             "confidence": "Confidence",
             "action": "Action",
-            "decisions": "Decisions",
+            "scored": "Scored decisions",
+            "advisory": "Advisory · not in score",
             "state": "State"
         },
-        "decisions": {
+        "scored": {
             "order": [
-                "breakingChange",
                 "securityImpact",
                 "databaseChange",
                 "apiImpact",
-                "authenticationImpact",
+                "authenticationImpact"
+            ],
+            "labels": {
+                "securityImpact": "security",
+                "databaseChange": "database",
+                "apiImpact": "api",
+                "authenticationImpact": "authentication"
+            }
+        },
+        "advisory": {
+            "order": [
+                "breakingChange",
                 "needsHumanReview",
                 "riskLevel"
             ],
             "labels": {
                 "breakingChange": "breaking change",
-                "securityImpact": "security",
-                "databaseChange": "database",
-                "apiImpact": "api",
-                "authenticationImpact": "authentication",
                 "needsHumanReview": "human review",
                 "riskLevel": "jev risk"
             }

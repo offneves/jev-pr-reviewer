@@ -44,7 +44,6 @@ describe("calculateRisk", () => {
                 authenticationImpact: { value: "yes", confidence: 0.9 },
             }),
         );
-        // 35+25+15+10+10+5 = 100
         expect(breakdown.score).toBe(100);
         expect(breakdown.riskLevel).toBe("CRITICAL");
     });
@@ -76,7 +75,6 @@ describe("calculateRisk", () => {
             state(),
             decisions({ securityImpact: { value: "yes", confidence: 0.9 } }),
         );
-        // 35 → MEDIUM (31–60)
         expect(medium.score).toBe(35);
         expect(medium.riskLevel).toBe("MEDIUM");
 
@@ -88,7 +86,6 @@ describe("calculateRisk", () => {
                 apiImpact: { value: "yes", confidence: 0.9 },
             }),
         );
-        // 35+25+15 = 75 → HIGH (61–80)
         expect(high.score).toBe(75);
         expect(high.riskLevel).toBe("HIGH");
 
@@ -104,7 +101,6 @@ describe("calculateRisk", () => {
                 authenticationImpact: { value: "yes", confidence: 0.9 },
             }),
         );
-        // 35+25+15+10+10+5 = 100 → CRITICAL
         expect(critical.score).toBe(100);
         expect(critical.riskLevel).toBe("CRITICAL");
     });
@@ -126,7 +122,6 @@ describe("applyPolicy", () => {
         expect(medPolicy.action).toBe("REVIEW");
         expect(medPolicy.recommendation).toBe("Security review required");
 
-        // 25+15+10+10+5 = 65 → HIGH without security → Human review recommended
         const highNoSec = decisions({
             databaseChange: { value: "yes", confidence: 0.9 },
             apiImpact: { value: "yes", confidence: 0.9 },
@@ -284,7 +279,6 @@ describe("applyPolicy", () => {
             decisions({ apiImpact: { value: "yes", confidence: 0.9 } }),
             config,
         );
-        // api 15 → CRITICAL when highMax is 15? score 15 <= highMax → HIGH
         expect(breakdown.score).toBe(15);
         expect(breakdown.riskLevel).toBe("HIGH");
         const low = calculateRisk(state(), decisions(), config);

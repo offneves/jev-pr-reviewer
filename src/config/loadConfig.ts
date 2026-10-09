@@ -23,7 +23,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Deep-merge plain objects; arrays and scalars from `override` replace. */
 export function deepMerge<T extends Record<string, unknown>>(
     base: T,
     override: Record<string, unknown>,

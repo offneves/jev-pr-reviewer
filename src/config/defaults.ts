@@ -1,6 +1,5 @@
 import type { AppConfig } from "./schema.js";
 
-/** Built-in v1 policy defaults (must stay aligned with historical calculator tests). */
 export const DEFAULT_CONFIG: AppConfig = {
     diff: {
         maxChars: 80_000,

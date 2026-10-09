@@ -37,12 +37,12 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
         action: "REVIEW",
         recommendation: "Security review required",
         contributions: [
-            { signal: "security", points: 35, detail: "security=yes (+35)" },
-            { signal: "api", points: 15, detail: "api=yes (+15)" },
+            { signal: "security", points: 35, detail: "security = yes (+35)" },
+            { signal: "api", points: 15, detail: "api = yes (+15)" },
             { signal: "files", points: 0, detail: "1 files (≤3)" },
             { signal: "lines", points: 0, detail: "4 lines (≤50)" },
-            { signal: "database", points: 0, detail: "database=no" },
-            { signal: "authentication", points: 0, detail: "authentication=no" },
+            { signal: "database", points: 0, detail: "database = no" },
+            { signal: "authentication", points: 0, detail: "authentication = no" },
         ],
         ...overrides,
     });
@@ -56,25 +56,32 @@ function baseDisplay(overrides: Partial<DisplayConfig> = {}): DisplayConfig {
                 risk: "Risk",
                 confidence: "Confidence",
                 action: "Action",
-                decisions: "Decisions",
+                scored: "Scored decisions",
+                advisory: "Advisory · not in score",
                 state: "State",
             },
-            decisions: {
+            scored: {
                 order: [
-                    "breakingChange",
                     "securityImpact",
                     "databaseChange",
                     "apiImpact",
                     "authenticationImpact",
+                ],
+                labels: {
+                    securityImpact: "security",
+                    databaseChange: "database",
+                    apiImpact: "api",
+                    authenticationImpact: "authentication",
+                },
+            },
+            advisory: {
+                order: [
+                    "breakingChange",
                     "needsHumanReview",
                     "riskLevel",
                 ],
                 labels: {
                     breakingChange: "breaking change",
-                    securityImpact: "security",
-                    databaseChange: "database",
-                    apiImpact: "api",
-                    authenticationImpact: "authentication",
                     needsHumanReview: "human review",
                     riskLevel: "jev risk",
                 },
@@ -111,38 +118,45 @@ function baseDisplay(overrides: Partial<DisplayConfig> = {}): DisplayConfig {
 }
 
 describe("formatAnalyze", () => {
-    it("includes risk level, confidence %, decision labels, action, and recommendation", () => {
+    it("shows compact risk/action header, confidence, scored label, recommendation", () => {
         const text = formatAnalyze(
             sampleResult({ riskLevel: "HIGH", confidence: 0.9 }),
             baseDisplay(),
         );
         expect(text).toContain("HIGH");
+        expect(text).toContain("REVIEW");
+        const riskIdx = text.indexOf("Risk");
+        const recIdx = text.indexOf("Security review required");
+        expect(riskIdx).toBeGreaterThan(-1);
+        expect(riskIdx).toBeLessThan(recIdx);
         expect(text).toContain("90.0%");
         expect(text).toContain("security");
         expect(text).not.toContain("securityImpact");
-        expect(text).toContain("REVIEW");
-        expect(text).toContain("Security review required");
     });
 
-    it("uses custom decision labels and order from display config", () => {
-        const display = baseDisplay();
-        display.analyze.decisions.order = [
-            "securityImpact",
-            "breakingChange",
-            "databaseChange",
-            "apiImpact",
-            "authenticationImpact",
-            "needsHumanReview",
-            "riskLevel",
-        ];
-        display.analyze.decisions.labels.securityImpact = "Segurança";
+    it("separates scored and advisory sections", () => {
+        const text = formatAnalyze(sampleResult(), baseDisplay());
+        expect(text).toContain("Scored decisions");
+        expect(text).toMatch(/Advisory.*not in score/i);
 
+        const scoredIdx = text.indexOf("Scored decisions");
+        const advisoryIdx = text.indexOf("Advisory");
+        expect(scoredIdx).toBeLessThan(advisoryIdx);
+
+        const scoredBlock = text.slice(scoredIdx, advisoryIdx);
+        const advisoryBlock = text.slice(advisoryIdx);
+        expect(scoredBlock).toContain("security");
+        expect(scoredBlock).not.toContain("jev risk");
+        expect(advisoryBlock).toContain("breaking change");
+        expect(advisoryBlock).toContain("human review");
+        expect(advisoryBlock).toContain("jev risk");
+    });
+
+    it("uses custom scored labels", () => {
+        const display = baseDisplay();
+        display.analyze.scored.labels.securityImpact = "Segurança";
         const text = formatAnalyze(sampleResult(), display);
-        const decisionsIdx = text.indexOf("Decisions");
-        const segurancaIdx = text.indexOf("Segurança");
-        const breakingIdx = text.indexOf("breaking change");
-        expect(segurancaIdx).toBeGreaterThan(decisionsIdx);
-        expect(segurancaIdx).toBeLessThan(breakingIdx);
+        expect(text).toContain("Segurança");
     });
 
     it("shows APPROVE recommendation phrase when action is APPROVE", () => {
@@ -168,14 +182,17 @@ describe("formatAnalyze", () => {
 });
 
 describe("formatExplain", () => {
-    it("lists contribution points and total score", () => {
+    it("lists contribution points and total score with shared layout markers", () => {
         const result = sampleResult();
         const text = formatExplain(result, baseDisplay());
         expect(text).toContain("+35");
         expect(text).toContain(`Total score: ${result.score}`);
+        expect(text).toContain("Score breakdown");
+        expect(text).toContain("Contributions");
+        expect(text).toMatch(/╭|─/);
     });
 
-    it("uses custom signal labels and order from display config", () => {
+    it("preserves display signal order even when points would sort differently", () => {
         const display = baseDisplay();
         display.explain.signals.order = [
             "files",
@@ -191,8 +208,33 @@ describe("formatExplain", () => {
         expect(text).toContain("Arquivos");
         const afterContributions = text.slice(text.indexOf("Contributions"));
         expect(afterContributions.indexOf("Arquivos")).toBeLessThan(
-            afterContributions.indexOf("security=yes"),
+            afterContributions.indexOf("security = yes"),
         );
+    });
+});
+
+describe("formatAnalyze edges and ANSI", () => {
+    it("puts unknown decision keys in advisory", () => {
+        const display = baseDisplay();
+        display.analyze.scored.order = ["securityImpact"];
+        display.analyze.advisory.order = ["breakingChange"];
+        const text = formatAnalyze(sampleResult(), display);
+        const advisory = text.slice(text.indexOf("Advisory"));
+        expect(advisory).toContain("database");
+        expect(advisory).toContain("human review");
+        expect(advisory).toContain("jev risk");
+    });
+
+    it("does not emit ANSI when NO_COLOR is set", () => {
+        const prev = process.env.NO_COLOR;
+        process.env.NO_COLOR = "1";
+        try {
+            const text = formatAnalyze(sampleResult(), baseDisplay());
+            expect(text).not.toMatch(/\x1b\[/);
+        } finally {
+            if (prev === undefined) delete process.env.NO_COLOR;
+            else process.env.NO_COLOR = prev;
+        }
     });
 });
 
@@ -201,10 +243,12 @@ describe("loadDisplayConfig", () => {
         resetDisplayConfigCache();
     });
 
-    it("loads the default displayConfig.json", async () => {
+    it("loads the default displayConfig.json with scored and advisory", async () => {
         const cfg = await loadDisplayConfig();
-        expect(cfg.analyze.title).toMatch(/PR Risk Analysis/);
+        expect(cfg.analyze.scored.order).toContain("securityImpact");
+        expect(cfg.analyze.advisory.order).toContain("riskLevel");
         expect(labelForDecision("securityImpact", cfg)).toBe("security");
+        expect(labelForDecision("breakingChange", cfg)).toBe("breaking change");
     });
 
     it("rejects invalid display JSON", async () => {

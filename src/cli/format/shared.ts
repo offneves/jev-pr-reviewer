@@ -86,3 +86,14 @@ export function actionColor(action: AnalysisResult["action"]): string {
             return RED;
     }
 }
+
+export function formatRiskActionLine(
+    riskLabel: string,
+    riskLevel: RiskLevel,
+    actionLabel: string,
+    action: AnalysisResult["action"],
+): string {
+    const risk = paint(riskLevel, BOLD, riskColor(riskLevel));
+    const act = paint(action, BOLD, actionColor(action));
+    return `  ${paint(riskLabel, DIM)} ${risk}   ${paint(actionLabel, DIM)} ${act}`;
+}

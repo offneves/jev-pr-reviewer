@@ -8,7 +8,6 @@ export { MrDiffError } from "./errors.js";
 
 export interface FetchMrDiffOptions {
     mrNumber: number;
-    /** Number or GitLab MR URL — preferred for `glab mr diff` */
     mrRef?: string;
     base?: string;
     cwd?: string;

@@ -15,10 +15,12 @@ export const DisplayConfigSchema = z.object({
             risk: z.string().min(1),
             confidence: z.string().min(1),
             action: z.string().min(1),
-            decisions: z.string().min(1),
+            scored: z.string().min(1),
+            advisory: z.string().min(1),
             state: z.string().min(1),
         }),
-        decisions: OrderedLabelSchema,
+        scored: OrderedLabelSchema,
+        advisory: OrderedLabelSchema,
     }),
     explain: z.object({
         title: z.string().min(1),
@@ -41,7 +43,10 @@ export function labelOf(
 }
 
 export function labelForDecision(key: string, config: DisplayConfig): string {
-    return labelOf(config.analyze.decisions.labels, key);
+    if (key in config.analyze.scored.labels) {
+        return labelOf(config.analyze.scored.labels, key);
+    }
+    return labelOf(config.analyze.advisory.labels, key);
 }
 
 export function labelForSignal(signal: string, config: DisplayConfig): string {

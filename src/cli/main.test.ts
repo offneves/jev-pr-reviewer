@@ -70,12 +70,30 @@ describe("CLI", () => {
 
         try {
             await writeFile(path, SAMPLE, "utf8");
-            await runCli(["analyze", path, "--json", "--mock"]);
+            await runCli([
+                "analyze",
+                path,
+                "--json",
+                "--mock",
+                "--profile",
+                "busy",
+            ]);
             const parsed = AnalysisResultSchema.parse(JSON.parse(logs.join("")));
-            expect(parsed.score).toBeTypeOf("number");
+            expect(typeof parsed.decisions.securityImpact.value).toBe("number");
+            expect(typeof parsed.decisions.databaseChange.value).toBe("number");
+            expect(typeof parsed.decisions.apiImpact.value).toBe("number");
+            expect(typeof parsed.decisions.authenticationImpact.value).toBe(
+                "number",
+            );
+            expect(parsed.decisions.securityImpact.value).toBe(70);
+            expect(parsed.decisions.databaseChange.value).toBe(60);
+            expect(parsed.decisions.apiImpact.value).toBe(55);
+            expect(parsed.decisions.authenticationImpact.value).toBe(50);
+            // (70*5 + 60*3 + 55*2 + 50*1) / 11 = 690/11 ≈ 62.73 → 63
+            expect(parsed.score).toBe(63);
             expect(parsed.riskLevel).toBeTruthy();
             expect(parsed.action).toBeTruthy();
-            expect(parsed.contributions.length).toBeGreaterThan(0);
+            expect(parsed.contributions.length).toBe(4);
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

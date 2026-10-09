@@ -165,6 +165,24 @@ describe("applyPolicy", () => {
         expect(medPolicy.recommendation).toBe("Security review required");
     });
 
+    it("maps HIGH risk level to REVIEW when confidence is high and security is 0", () => {
+        const config: AppConfig = {
+            ...DEFAULT_CONFIG,
+            weights: { security: 0, database: 1, api: 1, authentication: 1 },
+        };
+        const highOnly = decisions({
+            databaseChange: { value: 70, confidence: 0.9 },
+            apiImpact: { value: 70, confidence: 0.9 },
+            authenticationImpact: { value: 70, confidence: 0.9 },
+        });
+        const hb = calculateRisk(state(), highOnly, config);
+        expect(hb.score).toBe(70);
+        expect(hb.riskLevel).toBe("HIGH");
+        const policy = applyPolicy(hb, highOnly, 0.9, config);
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.recommendation).toBe("Human review recommended");
+    });
+
     it("uses human review text when security impact is 0", () => {
         const d = decisions({
             databaseChange: { value: 100, confidence: 0.9 },

@@ -15,6 +15,9 @@ describe("loadConfig", () => {
         try {
             const cfg = await loadConfig({ cwd: dir });
             expect(cfg.weights.security).toBe(5);
+            expect(cfg.weights.database).toBe(3);
+            expect(cfg.weights.api).toBe(2);
+            expect(cfg.weights.authentication).toBe(1);
             expect(cfg.confidence.threshold).toBe(0.7);
             expect(cfg.diff.maxChars).toBe(80_000);
             expect(cfg).toEqual(DEFAULT_CONFIG);

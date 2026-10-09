@@ -20,6 +20,16 @@ describe("createMockJevClient", () => {
             expect(decisions[key].confidence).toBeGreaterThanOrEqual(0);
             expect(decisions[key].confidence).toBeLessThanOrEqual(1);
         }
+        expect(Number.isInteger(decisions.securityImpact.value)).toBe(true);
+        expect(Number.isInteger(decisions.databaseChange.value)).toBe(true);
+        expect(Number.isInteger(decisions.apiImpact.value)).toBe(true);
+        expect(Number.isInteger(decisions.authenticationImpact.value)).toBe(
+            true,
+        );
+        expect(decisions.securityImpact.value).toBe(0);
+        expect(decisions.databaseChange.value).toBe(0);
+        expect(decisions.apiImpact.value).toBe(0);
+        expect(decisions.authenticationImpact.value).toBe(0);
     });
 
     it("applies configurable overrides without network", async () => {

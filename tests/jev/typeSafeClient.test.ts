@@ -105,9 +105,9 @@ describe("createTypeSafeJevClient", () => {
             diffText: "",
             truncated: false,
         });
-        expect(decisions.securityImpact.value).toBe(84);
+        expect(decisions.securityImpact.value).toBe(93);
         expect(decisions.apiImpact.value).toBe(100);
-        expect(decisions.authenticationImpact.value).toBe(50);
+        expect(decisions.authenticationImpact.value).toBe(56);
         expect(decisions.databaseChange.value).toBe(0);
         vi.doUnmock("@typesafe-ai/sdk");
         vi.resetModules();

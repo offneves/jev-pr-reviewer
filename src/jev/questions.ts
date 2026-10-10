@@ -5,23 +5,24 @@ const yesNo = {
     no: "No",
 } as const;
 
+const IMPACT_RUBRIC_MAX = 9;
+
 const IMPACT_RUBRIC = [
-    "No impact",
-    null,
-    null,
-    null,
-    null,
-    "Moderate impact",
-    null,
-    null,
-    null,
-    null,
-    "Critical impact",
+    "0 — No impact",
+    "1 — Minimal / negligible impact",
+    "2 — Very low impact",
+    "3 — Low impact",
+    "4 — Low-to-moderate impact",
+    "5 — Moderate impact",
+    "6 — Moderate-to-high impact",
+    "7 — High impact",
+    "8 — Very high impact",
+    "9 — Critical impact",
 ] as const;
 
 export function scoreToImpact(rawScore: number): number {
-    const clamped = Math.min(10, Math.max(0, rawScore));
-    return Math.round(clamped * 10);
+    const clamped = Math.min(IMPACT_RUBRIC_MAX, Math.max(0, rawScore));
+    return Math.round((clamped / IMPACT_RUBRIC_MAX) * 100);
 }
 
 function impactScore(instructions: string) {
@@ -35,16 +36,16 @@ export function buildJevQuestions() {
             yesNo,
         ),
         securityImpact: impactScore(
-            "How severe is the security impact of this PR (0=none … 10=critical)?",
+            "How severe is the security impact of this PR (0=none … 9=critical)?",
         ),
         databaseChange: impactScore(
-            "How severe is the database/schema impact of this PR (0=none … 10=critical)?",
+            "How severe is the database/schema impact of this PR (0=none … 9=critical)?",
         ),
         apiImpact: impactScore(
-            "How severe is the public API contract impact of this PR (0=none … 10=critical)?",
+            "How severe is the public API contract impact of this PR (0=none … 9=critical)?",
         ),
         authenticationImpact: impactScore(
-            "How severe is the authentication/authorization impact of this PR (0=none … 10=critical)?",
+            "How severe is the authentication/authorization impact of this PR (0=none … 9=critical)?",
         ),
         needsHumanReview: choice(
             "Should a human review this PR before merge?",

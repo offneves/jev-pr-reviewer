@@ -2,15 +2,34 @@
 
 CLI local para analisar o diff de um Pull Request / Merge Request, obter decisões estruturadas via JEV (TypeSafe) e aplicar uma política de risco determinística no código da aplicação.
 
-Objetivo do experimento: separar o que o modelo decide (confiança) do que a aplicação decide (pontuação, nível de risco e ação APPROVE / REVIEW / BLOCK).
+Objetivo do experimento: separar o que o modelo decide (impacto + confiança) do que a aplicação decide (média ponderada, nível de risco e ação APPROVE / REVIEW / BLOCK).
 
 <br>
 
 ## Por que JEV?
 
-JEV (TypeSafe) responde perguntas estruturadas sobre o diff. Nos eixos que entram no score (security, database, api, authentication) a resposta é um **impacto 0–100** (via rubrica `score` 0–10 mapeada ×10), cada uma com confiança (0–1). Campos advisory (`breakingChange`, `needsHumanReview`, `riskLevel`) continuam choice/yes-no ou níveis.
+JEV (TypeSafe) responde perguntas estruturadas sobre o diff.
 
-O modelo **não** define pesos, faixas nem se o PR deve ser aprovado. Isso fica no código / no arquivo JSON de política. Assim você pode mudar a regra de negócio sem reescrever o prompt, e o comportamento da política fica testável e previsível.
+**Eixos pontuáveis** (entram no score):
+
+| Campo | Pergunta (resumo) |
+|-------|-------------------|
+| `securityImpact` | Quão grave é o impacto de segurança? |
+| `databaseChange` | Quão grave é o impacto de banco/schema? |
+| `apiImpact` | Quão grave é o impacto de API pública? |
+| `authenticationImpact` | Quão grave é o impacto de auth? |
+
+Cada um usa a pergunta TypeSafe `score` com rubrica **0–9** (no máximo 10 níveis na API). A app converte para impacto **0–100**:
+
+```text
+impact = round( (clamp(rawScore, 0, 9) / 9) * 100 )
+```
+
+Cada resposta traz também uma confiança (0–1).
+
+**Eixos advisory** (não entram no score): `breakingChange` e `needsHumanReview` (yes/no), `riskLevel` (LOW…CRITICAL).
+
+O modelo **não** define pesos, faixas nem se o PR deve ser aprovado. Isso fica no código / no JSON de política.
 
 <br>
 
@@ -22,21 +41,29 @@ O modelo **não** define pesos, faixas nem se o PR deve ser aprovado. Isso fica 
 | TypeScript | Código |
 | citty | CLI (`analyze`, `explain`, `mr`) |
 | Zod | Schemas de state, resultado e config |
-| Vitest | Testes |
+| Vitest | Testes em `tests/` |
 | `@typesafe-ai/sdk` | Client JEV |
 
-Mock embutido (`--mock`) permite rodar sem rede e sem API key para visualizar o funcionamento.
+Mock embutido (`--mock`) permite rodar sem rede e sem API key.
 
 <br>
 
-## Como funciona
+## Como funciona (scoring)
 
 1. Lê um arquivo `.diff` (local ou baixado de um MR).
-2. Monta o **state**: lista de arquivos, additions, deletions, texto do diff (com teto de tamanho).
-3. Envia o state ao **JEV** (real ou mock) e recebe as decisões.
-4. **Risk calculator** faz a **média ponderada** dos impactos 0–100 com pesos relativos do JSON → score 0–100 → nível LOW…CRITICAL.
-5. **Review policy** transforma nível (+ gate de confiança) em ação e texto de recommendation.
+2. Monta o **state**: arquivos, additions, deletions, texto do diff (com teto `diff.maxChars`).
+3. Envia o state ao **JEV** (real ou mock) e recebe impactos 0–100 + decisões advisory.
+4. **Risk calculator** calcula a média ponderada dos 4 impactos com os `weights` do JSON:
+
+```text
+score = round( sum(impact_i * weight_i) / sum(weight_i) )
+```
+
+   Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
+5. **Review policy** transforma nível (+ gate de confiança) em APPROVE / REVIEW / BLOCK e recommendation.
 6. Imprime relatório legível ou JSON.
+
+`files.tiers` e `lines.tiers` **não entram no score** (só métricas de state / compatibilidade de config).
 
 <br>
 
@@ -44,53 +71,48 @@ Mock embutido (`--mock`) permite rodar sem rede e sem API key para visualizar o 
 
 - Node.js 20 ou superior
 - npm
-- Para MR do Gitlab: `git` no PATH; opcionalmente [glab](https://gitlab.com/gitlab-org/cli) (preferido para baixar o diff)
+- Para MR do GitLab: `git` no PATH; opcionalmente [glab](https://gitlab.com/gitlab-org/cli)
 
 <br>
 
-## Instalação passo a passo
+## Instalação
 
 ```bash
 cd jev-pr-reviewer
 npm install
+npm run build
 ```
 
-Opcional: instalar o comando globalmente no ambiente local:
+Opcional — comando global no ambiente local:
 
 ```bash
 npm link
 ```
 
-Depois disso, `jev-pr-reviewer` fica disponível no terminal. Para o uso sem `npm link`, use:
+Sem `npm link`:
 
 ```bash
 node bin/jev-pr-reviewer.mjs <comando> ...
 ```
 
-### Flags
+O binário prefere `dist/` se existir; depois de alterar o código, rode `npm run build` (ou use o fallback `tsx` em `src/`).
 
-São opções que alteram o comportamento de `analyze` / `explain` / `mr` — não são comandos isolados.
+### Flags
 
 | Flag | O que faz |
 |------|-----------|
-| `--json` | Em vez do relatório legível no terminal, imprime o resultado em JSON (`AnalysisResult`). Útil para script/pipeline. Existe em `analyze` e `mr`. |
-| `--explain` | Só no comando **`mr`**. Depois de baixar o diff, mostra o breakdown de pontos (como o subcomando `explain`) em vez do relatório normal. Para arquivo local use o subcomando: `explain arquivo.diff`. |
-| `--config` | Caminho do JSON de política. Ex.: `--config ./minha-politica.json`. Sem ela, procura `jev-pr-reviewer.config.json` no cwd ou usa defaults. |
-| `--profile` | Só faz sentido com **`--mock`**. Escolhe o perfil de decisões fake: `default`, `busy` ou `critical` (mais pesado / arriscado). |
+| `--json` | Emite `AnalysisResult` em JSON (`analyze` / `mr`). |
+| `--explain` | No comando **`mr`**, mostra o breakdown (igual ao subcomando `explain`). Para arquivo local: `explain arquivo.diff`. |
+| `--config` | Caminho do JSON de política. Sem ela: `jev-pr-reviewer.config.json` no cwd ou defaults. |
+| `--mock` | Usa decisões fake (sem TypeSafe / sem rede). |
+| `--profile` | Com `--mock`: `default`, `busy` ou `critical`. |
 
 Exemplos:
 
 ```bash
-# JSON
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock --json
-
-# Política customizada
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock --config ./jev-pr-reviewer.config.json
-
-# mock com profile busy
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock --profile busy
-
-# MR
 jev-pr-reviewer mr 123 --mock --explain
 ```
 
@@ -98,61 +120,48 @@ jev-pr-reviewer mr 123 --mock --explain
 
 ## Política de risco (JSON)
 
-### Ativar um arquivo de config
+### Ativar
 
 ```bash
 cp config/jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
 ```
 
-Edite `jev-pr-reviewer.config.json`. Campos que você omitir usam o default embutido.
-
 Ordem de resolução:
 
 1. `--config /caminho/para/arquivo.json` (obrigatório existir)
 2. `./jev-pr-reviewer.config.json` no diretório atual
-3. Defaults embutidos no código
+3. Defaults embutidos
 
-JSON inválido ou valor fora do schema → erro com campo e motivo; a análise não roda pela metade.
+JSON inválido → erro com campo e motivo; a análise não parcializa.
 
-Campos `_docs` e `description` são só documentação; o loader ignora no cálculo.
+Campos `_docs` e `description` são só documentação.
 
-<br>
-
-### O que cada item configura
+### Campos
 
 #### `diff.maxChars` (default: 80000)
 
-Tamanho máximo do **texto bruto** do `.diff` guardado no state e enviado ao JEV.
+Teto do texto do `.diff` no state / enviado ao JEV. Acima disso: corte + `truncated=true`. Contagem de arquivos e linhas usa o arquivo inteiro. Não altera o score.
 
-- Se o arquivo for maior, o texto é cortado e `truncated=true`.
-- Contagem de arquivos e linhas `+`/`-` usa o arquivo inteiro.
-- **Não** é “caracteres alterados” e **não** soma pontos no score.
-- Serve para limitar contexto/custo/latência do modelo.
+#### `weights` (importância relativa)
 
-#### `weights` (importância relativa na média)
+Não são pontos somados. Defaults:
 
-Não são pontos somados. O score é:
+| Campo | Default |
+|-------|---------|
+| `security` | 5 |
+| `database` | 3 |
+| `api` | 2 |
+| `authentication` | 1 |
 
-```text
-score = round( sum(impact_i * weight_i) / sum(weight_i) )
-```
+Quanto maior o peso, mais o eixo puxa a média. Pelo menos um peso deve ser > 0.
 
-| Campo | Default | Significado |
-|-------|---------|-------------|
-| `security` | 5 | Peso relativo do impacto de segurança |
-| `database` | 3 | Peso relativo do impacto de banco |
-| `api` | 2 | Peso relativo do impacto de API |
-| `authentication` | 1 | Peso relativo do impacto de auth |
-
-Quanto maior o peso, mais aquele eixo puxa a média. Pelo menos um peso deve ser > 0. **Breaking change:** configs antigas com 35/25/15/10 ainda carregam, mas a semântica agora é relativa (não “+35 no score”).
+Configs antigas com 35/25/15/10 ainda carregam, mas a semântica agora é **relativa** (não “+35 no score”).
 
 #### `files.tiers` / `lines.tiers`
 
-Mantidos no JSON por compatibilidade. **Não entram no score** nesta versão (só métricas de state / truncagem). O score usa apenas os 4 impactos JEV.
+Reservados / compatibilidade. **Não afetam o score.**
 
-#### `levels` (score → faixa de risco)
-
-Depois da média ponderada, o score fica em 0–100.
+#### `levels` (score → risco)
 
 | Score | Nível | Ação típica* |
 |-------|--------|----------------|
@@ -161,142 +170,109 @@ Depois da média ponderada, o score fica em 0–100.
 | `mediumMax`+1 … `highMax` (80) | HIGH | REVIEW |
 | acima de `highMax` | CRITICAL | BLOCK |
 
-*Sujeito ao gate de confiança abaixo. Se `securityImpact >= 1`, o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
+\*Sujeito ao gate de confiança. Se `securityImpact >= 1`, o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
 
 #### `confidence.threshold` (default: 0.7)
 
-Média aritmética das confidences das decisões JEV (0–1).
+Média das confidences JEV. Se for **estritamente menor** que o threshold → ação **REVIEW** (mesmo que o nível sugerisse APPROVE ou BLOCK).
 
-Se a média for **estritamente menor** que o threshold, a ação vira **REVIEW**, mesmo que o nível fosse LOW (APPROVE) ou CRITICAL (BLOCK). Evita automação quando o modelo está inseguro.
+#### `recommendations`
 
-#### `recommendations` (textos do relatório)
-
-Não alteram o cálculo:
-
-- `approve` — ação APPROVE (e security impact = 0)
-- `review` — ação REVIEW
-- `blockOrSecurity` — ação BLOCK, ou quando security impact ≥ 1
+- `approve` — APPROVE e security impact = 0
+- `review` — REVIEW
+- `blockOrSecurity` — BLOCK, ou security impact ≥ 1
 
 #### `cli.defaultBaseBranch` (default: `main`)
 
-Branch base preferida no fallback `git` do comando `mr` quando você não passa `--base`.
+Base preferida no fallback `git` do `mr` quando `--base` não é passado.
 
-### Exemplo de score
+### Exemplo numérico
 
-impactos security=85, database=40, api=10, authentication=0 com pesos 5/3/2/1:
+Impactos 85 / 40 / 10 / 0 com pesos 5 / 3 / 2 / 1:
 
-`(85×5 + 40×3 + 10×2 + 0×1) / 11 ≈ 51.36` → score **51** → MEDIUM → REVIEW (se confiança ≥ threshold; recommendation de security porque impact ≥ 1).
+```text
+(85×5 + 40×3 + 10×2 + 0×1) / 11 ≈ 51.36 → score 51 → MEDIUM → REVIEW
+```
+
+(com confiança ≥ threshold; recommendation de security porque impact ≥ 1)
+
+No `explain`, cada contribuição aparece como `impact N (weight W)` — a coluna numérica é o impacto 0–100, não o peso somado.
 
 <br>
 
-## Uso passo a passo
+## Uso
 
-### 1. Ver o fluxo sem API (mock)
-
-No diretório do projeto:
+### Mock (sem API)
 
 ```bash
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock
-```
-
-Saída legível: risco, decisões, ação, recommendation.
-
-Breakdown dos pontos:
-
-```bash
 node bin/jev-pr-reviewer.mjs explain fixtures/sample.diff --mock
-```
-
-JSON (schema `AnalysisResult`):
-
-```bash
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --json --mock
-```
-
-Perfis de mock mais “pesados”:
-
-```bash
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock --profile busy
-node bin/jev-pr-reviewer.mjs analyze fixtures/busy.diff --mock --profile critical
-
-# atalhos npm
 npm run demo:busy
 npm run demo:critical
 npm run demo:explain
 ```
 
-### 2. Usar sua política JSON
+### Política JSON
 
 ```bash
 cp config/jev-pr-reviewer.config.example.json jev-pr-reviewer.config.json
-# edite pesos / faixas / etc.
-
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock
-# ou path explícito:
 node bin/jev-pr-reviewer.mjs analyze fixtures/sample.diff --mock --config ./jev-pr-reviewer.config.json
 ```
 
-### 3. Análise real com TypeSafe
+### TypeSafe real
 
-1. Preencha `TYPESAFE_API_KEY` no `.env`.
-2. Rode sem `--mock`:
+1. `TYPESAFE_API_KEY` no `.env`
+2. Sem `--mock`:
 
 ```bash
 node bin/jev-pr-reviewer.mjs analyze caminho/para/seu.diff
 ```
 
-### 4. Analisar um Merge Request do GitLab
-
-1. `TYPESAFE_API_KEY` no `.env` (ou use `--mock`).
-2. `npm link` (uma vez), se quiser o binário no PATH.
-3. Entre no clone do repositório GitLab e rode:
+### Merge Request GitLab
 
 ```bash
 jev-pr-reviewer mr 123
 jev-pr-reviewer mr https://gitlab.com/grupo/projeto/-/merge_requests/123
-
-# sem API
 jev-pr-reviewer mr 123 --mock
+jev-pr-reviewer mr 123 --explain
 ```
 
 Como o diff é obtido:
 
-1. Tenta `glab mr diff`
-2. Se falhar, fallback: `git fetch` do ref do MR + `git diff` contra a base
-
-Base branch:
-
-- `--base develop` na linha de comando, ou
-- `cli.defaultBaseBranch` no JSON de política
+1. `glab mr diff`
+2. Fallback: `git fetch` do ref do MR + `git diff` contra a base (`--base` ou `cli.defaultBaseBranch`)
 
 <br>
 
-## Layout da saída CLI (display)
+## Layout da saída CLI
 
 Arquivo: `src/cli/format/displayConfig.json`
 
 No `analyze` pretty:
 
-- **Scored decisions** — impactos 0–100 que entram na média (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
-- **Advisory · not in score** — opinião JEV que não pontua (`breakingChange`, `needsHumanReview`, `riskLevel`)
+- **Scored decisions** — impactos 0–100 (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
+- **Advisory · not in score** — `breakingChange`, `needsHumanReview`, `riskLevel`
 
-Contributions no `explain` mostram `impact N (weight W)` na ordem de `explain.signals.order` (sem reordenar por pontos).
+No `explain`: contribuições com impacto e weight, na ordem de `explain.signals.order` (sem sort por pontos).
 
 <br>
 
 ## Estrutura
 
 ```
-src/cli/          # comandos
-src/cli/format/   # layout CLI (JSON + analyze/explain/shared)
-src/config/       # schema Zod, defaults, loadConfig (política de risco)
-src/state/        # parse do diff → PrState
-src/jev/          # MockJevClient e TypeSafeJevClient
-src/risk/         # calculator + policy
-src/pipeline/     # analyzeDiff (orquestra o fluxo)
-src/git/          # fetch de MR GitLab
-fixtures/         # diffs de exemplo
-config/           # example de política JSON
-docs/plans/       # planos de feature
-tests/            # Vitest (espelha src/)
+src/cli/          comandos
+src/cli/format/   layout CLI
+src/config/       schema Zod, defaults, loadConfig
+src/state/        parse do diff → PrState
+src/jev/          MockJevClient e TypeSafeJevClient
+src/risk/         calculator + policy
+src/pipeline/     analyzeDiff
+src/git/          fetch de MR GitLab
+tests/            Vitest (espelha src/)
+fixtures/         diffs de exemplo
+config/           example de política JSON
+docs/plans/       planos de feature
 ```

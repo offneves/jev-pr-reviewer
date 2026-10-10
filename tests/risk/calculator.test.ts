@@ -40,7 +40,6 @@ describe("calculateRisk", () => {
                 authenticationImpact: { value: 0, confidence: 0.9 },
             }),
         );
-        // (85*5 + 40*3 + 10*2 + 0*1) / 11 = 565/11 ≈ 51.36 → 51
         expect(breakdown.score).toBe(51);
         expect(breakdown.riskLevel).toBe("MEDIUM");
         expect(breakdown.contributions.map((c) => c.signal)).toEqual([
@@ -112,7 +111,6 @@ describe("calculateRisk", () => {
                 authenticationImpact: { value: 0, confidence: 0.9 },
             }),
         );
-        // (100*5+100*3+100*2+0)/11 = 1000/11 ≈ 90.9 → 91 HIGH? highMax 80 → CRITICAL
         expect(high.score).toBe(91);
         expect(high.riskLevel).toBe("CRITICAL");
 
@@ -279,7 +277,6 @@ describe("applyPolicy", () => {
             }),
             config,
         );
-        // (0+0+33*2+0)/11 ≈ 6 → MEDIUM with custom bounds? 6 > 5 and <= 10 → MEDIUM
         expect(breakdown.score).toBe(6);
         expect(breakdown.riskLevel).toBe("MEDIUM");
         const low = calculateRisk(state(), decisions(), config);

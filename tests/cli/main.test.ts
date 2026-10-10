@@ -91,7 +91,6 @@ describe("CLI", () => {
             expect(parsed.decisions.databaseChange.value).toBe(60);
             expect(parsed.decisions.apiImpact.value).toBe(55);
             expect(parsed.decisions.authenticationImpact.value).toBe(50);
-            // (70*5 + 60*3 + 55*2 + 50*1) / 11 = 690/11 ≈ 62.73 → 63
             expect(parsed.score).toBe(63);
             expect(parsed.riskLevel).toBeTruthy();
             expect(parsed.action).toBeTruthy();

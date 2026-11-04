@@ -38,6 +38,28 @@ function unknownKeys(
     );
 }
 
+const CITATION_SNIPPET_CHARS = 60;
+
+function citationLines(
+    decision: AnalysisResult["decisions"][DecisionKey],
+    result: AnalysisResult,
+    labelWidth: number,
+): string[] {
+    const ids = "evidenceIds" in decision ? decision.evidenceIds : [];
+    const byId = new Map(result.evidence.map((e) => [e.id, e] as const));
+    const indent = " ".repeat(labelWidth + 4);
+    return ids.flatMap((id) => {
+        const item = byId.get(id);
+        if (!item) return [];
+        const first = item.snippet.split("\n")[0] ?? "";
+        const snippet =
+            first.length > CITATION_SNIPPET_CHARS
+                ? `${first.slice(0, CITATION_SNIPPET_CHARS - 1)}…`
+                : first;
+        return [`${indent}${paint(`${id} ${item.path}`, CYAN)}  ${paint(snippet, DIM)}`];
+    });
+}
+
 function renderDecisionBlock(
     keys: DecisionKey[],
     result: AnalysisResult,
@@ -57,6 +79,7 @@ function renderDecisionBlock(
         lines.push(
             `  ${paint(label, DIM)}  ${value}  ${paint(pct(decision.confidence), CYAN)}`,
         );
+        lines.push(...citationLines(decision, result, labelWidth));
     }
     return lines;
 }

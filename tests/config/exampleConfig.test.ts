@@ -44,5 +44,6 @@ describe("example config gates", () => {
             configPath: resolve(process.cwd(), "config/jev-pr-reviewer.config.example.json"),
         });
         expect(cfg.gates.rules).toEqual(DEFAULT_GATE_RULES);
+        expect(cfg.evidence.minImpactForRequiredEvidence).toBe(40);
     });
 });

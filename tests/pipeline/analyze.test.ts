@@ -165,4 +165,63 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("builds the evidence catalog, sends it to JEV and drops unknown ids (EVID-01/02)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "auth.diff");
+        const diff = `diff --git a/src/auth/login.ts b/src/auth/login.ts
+--- a/src/auth/login.ts
++++ b/src/auth/login.ts
+@@ -1 +1 @@
+-const ttl = 60;
++const ttl = 6000;
+`;
+        const seen: unknown[] = [];
+        const mock = createMockJevClient({
+            securityImpact: { value: 80, confidence: 0.9, evidenceIds: ["E9", "E1"] },
+        });
+        const client: JevClient = {
+            evaluate: (state, context) => {
+                seen.push(context?.evidence);
+                return mock.evaluate(state, context);
+            },
+        };
+        try {
+            await writeFile(path, diff, "utf8");
+            const result = await analyzeDiff(path, client);
+            expect(result.evidence).toEqual([
+                { id: "E1", path: "src/auth/login.ts", snippet: "-const ttl = 60;\n+const ttl = 6000;" },
+            ]);
+            expect(seen).toEqual([result.evidence]);
+            expect(result.decisions.securityImpact.evidenceIds).toEqual(["E1"]);
+            expect(result.decisions.apiImpact.evidenceIds).toEqual([]);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("forces REVIEW end to end when a high impact cites only unknown ids", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "sample.diff");
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            const config = {
+                ...DEFAULT_CONFIG,
+                weights: { security: 0, database: 0, api: 0, authentication: 1 },
+                gates: { rules: [] },
+            };
+            const result = await analyzeDiff(
+                path,
+                createMockJevClient({
+                    apiImpact: { value: 90, confidence: 0.9, evidenceIds: ["E7"] },
+                }),
+                config,
+            );
+            expect(result.riskLevel).toBe("LOW");
+            expect(result.decisions.apiImpact.evidenceIds).toEqual([]);
+            expect(result.action).toBe("REVIEW");
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });

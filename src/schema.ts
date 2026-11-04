@@ -135,6 +135,7 @@ export const AnalysisResultSchema = z.object({
     truncation: TruncationSchema,
     inventory: ChangeInventorySchema,
     gates: z.array(GateResultSchema),
+    evidence: z.array(EvidenceItemSchema),
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

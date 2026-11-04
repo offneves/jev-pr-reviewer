@@ -61,7 +61,7 @@ score = round( sum(impact_i * weight_i) / sum(weight_i) )
 ```
 
    Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
-6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE + gates determinísticos) em APPROVE / REVIEW / BLOCK e recommendation.
+6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE + impacto alto sem evidência ⇒ nunca APPROVE + gates determinísticos) em APPROVE / REVIEW / BLOCK e recommendation.
 7. Imprime relatório legível ou JSON.
 
 ### Inventário de mudanças
@@ -209,6 +209,14 @@ Média das confidences JEV. Se for **estritamente menor** que o threshold → a�
 #### `cli.defaultBaseBranch` (default: `main`)
 
 Base preferida no fallback `git` do `mr` quando `--base` não é passado.
+
+#### `evidence.minImpactForRequiredEvidence` (default: 40)
+
+A app monta um **catálogo de evidências** do diff completo: um item por hunk alterado (`E1`, `E2`, ...), paths sensíveis primeiro, até 40 itens, trecho limitado a 240 caracteres. O JEV recebe, na mesma chamada, uma pergunta `choice` por eixo pontuado (`securityEvidence`, `databaseEvidence`, `apiEvidence`, `authenticationEvidence`) com as opções `E1..En` + `NONE`. Viram `evidenceIds` do eixo os ids com probabilidade ≥ 0.15 (no máximo 3, maior primeiro). Ids fora do catálogo são descartados.
+
+Se algum eixo pontuado tiver impacto ≥ este valor e nenhuma evidência válida, **APPROVE vira REVIEW** (BLOCK não muda). Não altera o score.
+
+`--json` expõe `evidence: [{ id, path, snippet }]` e `decisions.<eixo>.evidenceIds`. No `analyze`, cada eixo com citações lista `E# path` + primeira linha do trecho logo abaixo.
 
 #### `gates.rules` (gates determinísticos)
 

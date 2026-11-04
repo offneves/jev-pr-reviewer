@@ -123,5 +123,9 @@
                 "description": "Lockfile alterado."
             }
         ]
+    },
+    "evidence": {
+        "description": "A app monta um catálogo de evidências (E1, E2, ... = trechos alterados do diff, até 40, paths sensíveis primeiro) e o JEV cita quais sustentam cada eixo pontuado. Se algum eixo (security, database, api, authentication) tiver impacto >= minImpactForRequiredEvidence e nenhuma evidência citada, APPROVE vira REVIEW (BLOCK não muda). Não altera o score.",
+        "minImpactForRequiredEvidence": 40
     }
 }

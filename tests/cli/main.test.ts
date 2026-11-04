@@ -87,6 +87,10 @@ describe("CLI", () => {
                 { path: "a.ts", status: "modified", language: "typescript" },
             ]);
             expect(parsed.gates).toEqual([]);
+            expect(parsed.evidence).toEqual([
+                { id: "E1", path: "a.ts", snippet: "+one\n+two" },
+            ]);
+            expect(parsed.decisions.securityImpact.evidenceIds).toEqual([]);
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

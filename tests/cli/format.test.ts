@@ -40,6 +40,7 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
             testsOrDocsOnly: false,
         },
         gates: [],
+        evidence: [],
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },
@@ -383,5 +384,30 @@ describe("deterministic gates section (GATE-06)", () => {
     it("omits the section when no gate matched", () => {
         expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/Deterministic gates/);
         expect(formatExplain(sampleResult(), baseDisplay())).not.toMatch(/Deterministic gates/);
+    });
+});
+
+describe("evidence citations in analyze (EVID-04)", () => {
+    it("renders the cited path and snippet under the scored decision", () => {
+        const base = sampleResult();
+        const result = sampleResult({
+            evidence: [
+                { id: "E1", path: "src/auth/login.ts", snippet: "+const token = sign(user);\n+return token;" },
+                { id: "E2", path: "db/m.sql", snippet: "+ALTER TABLE users" },
+            ],
+            decisions: {
+                ...base.decisions,
+                securityImpact: { value: 85, confidence: 0.9, evidenceIds: ["E1"] },
+                databaseChange: { value: 40, confidence: 0.9, evidenceIds: [] },
+            },
+        });
+        const lines = formatAnalyze(result, baseDisplay()).split("\n");
+        const securityRow = lines.findIndex((l) => /^\s+security\s/.test(l));
+        expect(lines[securityRow + 1]).toContain("E1 src/auth/login.ts");
+        expect(lines[securityRow + 1]).toContain("+const token = sign(user);");
+        expect(lines[securityRow + 1]).not.toContain("return token");
+        const databaseRow = lines.findIndex((l) => /^\s+database\s/.test(l));
+        expect(lines[databaseRow + 1]).not.toMatch(/E\d/);
+        expect(lines.join("\n")).not.toContain("E2 db/m.sql");
     });
 });

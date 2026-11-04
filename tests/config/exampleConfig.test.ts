@@ -35,3 +35,14 @@ describe("jev-pr-reviewer.config.example.json", () => {
         expect(parsed.weights.authentication).toBe(1);
     });
 });
+
+describe("example config gates", () => {
+    it("loads and lists the default gate rules", async () => {
+        const { loadConfig } = await import("../../src/config/loadConfig.js");
+        const { DEFAULT_GATE_RULES } = await import("../../src/risk/gates.js");
+        const cfg = await loadConfig({
+            configPath: resolve(process.cwd(), "config/jev-pr-reviewer.config.example.json"),
+        });
+        expect(cfg.gates.rules).toEqual(DEFAULT_GATE_RULES);
+    });
+});

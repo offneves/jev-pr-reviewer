@@ -70,5 +70,58 @@
     "cli": {
         "description": "defaultBaseBranch é a branch base preferida no fallback git do comando 'mr' quando você não passa --base. Se essa branch não existir no repo, a CLI ainda pode tentar main/master conforme a implementação de resolve.",
         "defaultBaseBranch": "main"
+    },
+    "gates": {
+        "description": "Regras determinísticas avaliadas pela app sobre o inventário e o diff completo. NÃO mudam o score: block força BLOCK; warn impede APPROVE (vira REVIEW); info só aparece no relatório. Se você definir rules, a lista substitui a default inteira. match aceita: secretLine (linha adicionada parecida com credencial), testRemoval (teste deletado ou que perdeu a maior parte das linhas), sensitiveCategory:<auth|secrets|migration|ci-config|docker-file|lockfile>, pathRegex:<regex sobre o path>.",
+        "rules": [
+            {
+                "id": "secret-inline",
+                "severity": "block",
+                "match": "secretLine",
+                "description": "Credencial/chave em linha adicionada."
+            },
+            {
+                "id": "migration-path",
+                "severity": "block",
+                "match": "sensitiveCategory:migration",
+                "description": "Migrations e arquivos .sql."
+            },
+            {
+                "id": "secrets-path",
+                "severity": "warn",
+                "match": "sensitiveCategory:secrets",
+                "description": ".env*, paths com secret/crypto."
+            },
+            {
+                "id": "auth-path",
+                "severity": "warn",
+                "match": "sensitiveCategory:auth",
+                "description": "Paths de auth/login/session/token/security."
+            },
+            {
+                "id": "test-removal",
+                "severity": "warn",
+                "match": "testRemoval",
+                "description": "Teste deletado ou com remoção massiva."
+            },
+            {
+                "id": "ci-config-path",
+                "severity": "warn",
+                "match": "sensitiveCategory:ci-config",
+                "description": "Mudança em arquivo de CI (só detecta, não executa)."
+            },
+            {
+                "id": "docker-file-path",
+                "severity": "warn",
+                "match": "sensitiveCategory:docker-file",
+                "description": "Dockerfile / docker-compose (só detecta)."
+            },
+            {
+                "id": "lockfile-change",
+                "severity": "info",
+                "match": "sensitiveCategory:lockfile",
+                "description": "Lockfile alterado."
+            }
+        ]
     }
 }

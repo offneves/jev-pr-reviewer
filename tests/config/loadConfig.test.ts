@@ -179,3 +179,69 @@ describe("loadConfig", () => {
         }
     });
 });
+
+describe("loadConfig gates.rules (GATE-07/08)", () => {
+    it("defaults to the embedded gate rules", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            const cfg = await loadConfig({ cwd: dir });
+            expect(cfg.gates.rules.map((r) => r.id)).toContain("migration-path");
+            expect(cfg.gates.rules).toEqual(DEFAULT_CONFIG.gates.rules);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("replaces default rules with configured rules and keeps other defaults", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            await writeFile(
+                join(dir, DEFAULT_CONFIG_FILENAME),
+                JSON.stringify({
+                    gates: {
+                        description: "docs",
+                        rules: [
+                            {
+                                id: "ui-only",
+                                severity: "warn",
+                                match: "pathRegex:^src/ui/",
+                                description: "ignored",
+                            },
+                        ],
+                    },
+                }),
+                "utf8",
+            );
+            const cfg = await loadConfig({ cwd: dir });
+            expect(cfg.gates.rules).toEqual([
+                { id: "ui-only", severity: "warn", match: "pathRegex:^src/ui/" },
+            ]);
+            expect(cfg.weights.security).toBe(5);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it.each([
+        [{ severity: "warn", match: "secretLine" }, "gates.rules.0.id"],
+        [{ id: "x", match: "secretLine" }, "gates.rules.0.severity"],
+        [{ id: "x", severity: "fatal", match: "secretLine" }, "gates.rules.0.severity"],
+        [{ id: "x", severity: "warn", match: "sensitiveCategory:nope" }, "gates.rules.0.match"],
+    ])("rejects invalid rule %j with path %s", async (rule, path) => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            await writeFile(
+                join(dir, DEFAULT_CONFIG_FILENAME),
+                JSON.stringify({ gates: { rules: [rule] } }),
+                "utf8",
+            );
+            await expect(loadConfig({ cwd: dir })).rejects.toSatisfy((err: unknown) => {
+                expect(err).toBeInstanceOf(ConfigError);
+                expect((err as Error).message).toContain(path);
+                return true;
+            });
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+});

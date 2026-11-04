@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidMatcher } from "../risk/gates.js";
 
 const TierSchema = z
     .object({
@@ -10,6 +11,16 @@ const TierSchema = z
     .refine((t) => t.max !== undefined || t.above !== undefined, {
         message: "tier must have max or above",
     });
+
+export const GateRuleSchema = z.object({
+    id: z.string().min(1),
+    severity: z.enum(["info", "warn", "block"]),
+    match: z.string().refine(isValidMatcher, {
+        message:
+            "match must be secretLine, testRemoval, sensitiveCategory:<auth|secrets|migration|ci-config|docker-file|lockfile> or pathRegex:<valid regex>",
+    }),
+    description: z.string().optional(),
+});
 
 export const AppConfigSchema = z
     .object({
@@ -77,6 +88,13 @@ export const AppConfigSchema = z
             })
             .partial()
             .optional(),
+        gates: z
+            .object({
+                description: z.string().optional(),
+                rules: z.array(GateRuleSchema).optional(),
+            })
+            .partial()
+            .optional(),
     })
     .passthrough();
 
@@ -121,6 +139,9 @@ export const ResolvedAppConfigSchema = z.object({
     }),
     cli: z.object({
         defaultBaseBranch: z.string().min(1),
+    }),
+    gates: z.object({
+        rules: z.array(GateRuleSchema.omit({ description: true })),
     }),
 });
 

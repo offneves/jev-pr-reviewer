@@ -1,3 +1,4 @@
+import { DEFAULT_GATE_RULES } from "../risk/gates.js";
 import type { AppConfig } from "./schema.js";
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -39,5 +40,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     cli: {
         defaultBaseBranch: "main",
+    },
+    gates: {
+        rules: DEFAULT_GATE_RULES.map((rule) => ({ ...rule })),
     },
 };

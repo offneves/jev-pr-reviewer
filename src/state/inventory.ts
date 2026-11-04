@@ -12,9 +12,10 @@ interface Declaration {
     kind: SymbolKind;
 }
 
-interface FileChunk {
+export interface FileChunk {
     path: string;
     status: FileStatus;
+    /** Raw diff lines for this file (headers + hunks). */
     lines: string[];
 }
 
@@ -129,7 +130,8 @@ function stripPrefix(p: string, prefix: string): string {
     return p.startsWith(prefix) ? p.slice(prefix.length) : p;
 }
 
-function splitFiles(text: string): FileChunk[] {
+/** Splits unified diff text into per-file chunks. */
+export function splitFiles(text: string): FileChunk[] {
     const chunks: FileChunk[] = [];
     let current: string[] | null = null;
     const flush = () => {
@@ -249,7 +251,7 @@ const TEST_OR_DOC = [
     /(?:^|\/)(?:README|CHANGELOG|LICENSE)[^/]*$/i,
 ];
 
-function isTestOrDoc(path: string): boolean {
+export function isTestOrDoc(path: string): boolean {
     return TEST_OR_DOC.some((re) => re.test(path));
 }
 

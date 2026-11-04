@@ -434,6 +434,22 @@ describe("disagreement note (CONF-06)", () => {
         expect(line).toContain("review required");
     });
 
+    it("reports an unforced disagreement without claiming a forced review", () => {
+        const result = sampleResult({
+            disagreement: {
+                appRiskLevel: "CRITICAL",
+                jevRiskLevel: "LOW",
+                ranks: 3,
+                forcedReview: false,
+            },
+        });
+        const line = formatAnalyze(result, baseDisplay())
+            .split("\n")
+            .find((l) => /disagree/i.test(l));
+        expect(line).toContain("app risk CRITICAL vs JEV risk LOW");
+        expect(line).not.toContain("review required");
+    });
+
     it("omits the note when levels agree", () => {
         expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/disagree/i);
     });

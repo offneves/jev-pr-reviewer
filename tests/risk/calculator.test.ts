@@ -545,6 +545,13 @@ describe("applyPolicy disagreement with JEV riskLevel (CONF-04/05)", () => {
         });
     });
 
+    it("does not mark forcedReview when low confidence already forced REVIEW", () => {
+        const d = decisions({ riskLevel: { value: "CRITICAL", confidence: 0.9 } });
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.5);
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.disagreement?.forcedReview).toBe(false);
+    });
+
     it("keeps BLOCK when app is CRITICAL and JEV says LOW", () => {
         const d = decisions({
             securityImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },

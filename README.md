@@ -146,7 +146,7 @@ Quando o diff passa do teto (`truncated=true`):
 
 - **Hunks de paths sensíveis vão primeiro** (auth/login/session/token/secret/crypto/security, `migrations/`, `.sql`, `.env*`, `Dockerfile`, `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`). Hunks inteiros são empacotados até o teto; o resto entra na ordem original. Sem paths sensíveis → corte simples do início.
 - **Nunca APPROVE**: se a política daria APPROVE, vira REVIEW (BLOCK continua possível).
-- `analyze` / `explain` mostram um aviso `⚠ Diff truncated` no topo.
+- `analyze` / `explain` mostram um aviso `WARNING: Diff truncated` no topo.
 - `--json` inclui `truncation: { truncated, originalChars, keptChars, prioritizedPaths }`.
 
 #### `weights` (importância relativa)

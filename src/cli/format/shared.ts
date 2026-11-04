@@ -107,7 +107,7 @@ export function truncationWarning(result: AnalysisResult): string[] {
     const t = result.truncation;
     if (!t.truncated) return [];
     const lines = [
-        `  ${paint("⚠ Diff truncated", BOLD, YELLOW)}${paint(
+        `  ${paint("WARNING: Diff truncated", BOLD, YELLOW)}${paint(
             ` — JEV analyzed ${t.keptChars} of ${t.originalChars} chars; APPROVE disabled`,
             YELLOW,
         )}`,

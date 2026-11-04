@@ -2,6 +2,7 @@ import type { AppConfig } from "../config/schema.js";
 import { DEFAULT_CONFIG } from "../config/defaults.js";
 import type { JevDecisions, RiskLevel } from "../schema.js";
 import type { RiskBreakdown } from "./calculator.js";
+import type { GateResult } from "./gates.js";
 
 export type PolicyAction = "APPROVE" | "REVIEW" | "BLOCK";
 
@@ -48,6 +49,8 @@ function recommendationFor(
 export interface PolicyContext {
     /** Diff was cut to fit diff.maxChars: JEV saw a partial PR. */
     truncated?: boolean;
+    /** Matched deterministic gates: block forces BLOCK, warn prevents APPROVE. */
+    gates?: GateResult[];
 }
 
 export function applyPolicy(
@@ -62,6 +65,12 @@ export function applyPolicy(
             ? "REVIEW"
             : actionFromLevel(breakdown.riskLevel);
     if (context.truncated && action === "APPROVE") {
+        action = "REVIEW";
+    }
+    const gates = context.gates ?? [];
+    if (gates.some((g) => g.severity === "block")) {
+        action = "BLOCK";
+    } else if (gates.some((g) => g.severity === "warn") && action === "APPROVE") {
         action = "REVIEW";
     }
 

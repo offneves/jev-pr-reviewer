@@ -348,3 +348,71 @@ describe("applyPolicy with truncated diff (TRUNC-02/03)", () => {
         expect(policy.action).toBe("APPROVE");
     });
 });
+
+describe("applyPolicy with deterministic gates (GATE-02/03/04)", () => {
+    const block = { id: "migration-path", severity: "block" as const, matchedPaths: ["db/m.sql"] };
+    const warn = { id: "auth-path", severity: "warn" as const, matchedPaths: ["src/auth/a.ts"] };
+    const info = { id: "lockfile-change", severity: "info" as const, matchedPaths: ["package-lock.json"] };
+
+    it("forces BLOCK when a block gate matched, even on LOW risk", () => {
+        const d = decisions();
+        const breakdown = calculateRisk(state(), d);
+        const policy = applyPolicy(breakdown, d, 0.95, DEFAULT_CONFIG, { gates: [block] });
+        expect(policy.action).toBe("BLOCK");
+        expect(policy.recommendation).toBe("Security review required");
+    });
+
+    it("forces BLOCK on a block gate even when confidence is low", () => {
+        const d = decisions();
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.3, DEFAULT_CONFIG, {
+            gates: [block],
+        });
+        expect(policy.action).toBe("BLOCK");
+    });
+
+    it("turns APPROVE into REVIEW when only a warn gate matched", () => {
+        const d = decisions();
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.95, DEFAULT_CONFIG, {
+            gates: [warn],
+        });
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.recommendation).toBe("Human review recommended");
+    });
+
+    it("leaves a CRITICAL BLOCK untouched when only a warn gate matched", () => {
+        const d = decisions({
+            securityImpact: { value: 100, confidence: 0.96 },
+            databaseChange: { value: 100, confidence: 0.96 },
+            apiImpact: { value: 100, confidence: 0.96 },
+            authenticationImpact: { value: 100, confidence: 0.96 },
+        });
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.96, DEFAULT_CONFIG, {
+            gates: [warn],
+        });
+        expect(policy.action).toBe("BLOCK");
+    });
+
+    it("uses BLOCK when both warn and block gates matched", () => {
+        const d = decisions();
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.95, DEFAULT_CONFIG, {
+            gates: [warn, block],
+        });
+        expect(policy.action).toBe("BLOCK");
+    });
+
+    it("keeps APPROVE when gates are empty or info only", () => {
+        const d = decisions();
+        const b = calculateRisk(state(), d);
+        expect(applyPolicy(b, d, 0.95, DEFAULT_CONFIG, { gates: [] }).action).toBe("APPROVE");
+        expect(applyPolicy(b, d, 0.95, DEFAULT_CONFIG, { gates: [info] }).action).toBe("APPROVE");
+    });
+
+    it("does not change score or contributions when gates fire", () => {
+        const d = decisions({ databaseChange: { value: 40, confidence: 0.9 } });
+        const before = calculateRisk(state(), d);
+        const snapshot = structuredClone(before);
+        applyPolicy(before, d, 0.95, DEFAULT_CONFIG, { gates: [block, warn] });
+        expect(before).toEqual(snapshot);
+        expect(before.score).toBe(11);
+    });
+});

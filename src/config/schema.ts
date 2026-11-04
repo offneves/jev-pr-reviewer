@@ -95,6 +95,13 @@ export const AppConfigSchema = z
             })
             .partial()
             .optional(),
+        evidence: z
+            .object({
+                description: z.string().optional(),
+                minImpactForRequiredEvidence: z.number().int().min(0).max(100).optional(),
+            })
+            .partial()
+            .optional(),
     })
     .passthrough();
 
@@ -142,6 +149,9 @@ export const ResolvedAppConfigSchema = z.object({
     }),
     gates: z.object({
         rules: z.array(GateRuleSchema.omit({ description: true })),
+    }),
+    evidence: z.object({
+        minImpactForRequiredEvidence: z.number().int().min(0).max(100),
     }),
 });
 

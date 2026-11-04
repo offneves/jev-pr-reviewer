@@ -44,4 +44,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     gates: {
         rules: DEFAULT_GATE_RULES.map((rule) => ({ ...rule })),
     },
+    evidence: {
+        minImpactForRequiredEvidence: 40,
+    },
 };

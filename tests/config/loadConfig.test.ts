@@ -245,3 +245,20 @@ describe("loadConfig gates.rules (GATE-07/08)", () => {
         }
     });
 });
+
+describe("loadConfig evidence (EVID-07)", () => {
+    it("defaults minImpactForRequiredEvidence to 40 and accepts overrides", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            expect((await loadConfig({ cwd: dir })).evidence.minImpactForRequiredEvidence).toBe(40);
+            await writeFile(
+                join(dir, DEFAULT_CONFIG_FILENAME),
+                JSON.stringify({ evidence: { minImpactForRequiredEvidence: 60 } }),
+                "utf8",
+            );
+            expect((await loadConfig({ cwd: dir })).evidence.minImpactForRequiredEvidence).toBe(60);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+});

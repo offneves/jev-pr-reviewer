@@ -53,6 +53,25 @@ export interface PolicyContext {
     gates?: GateResult[];
 }
 
+const SCORED_AXES = [
+    "securityImpact",
+    "databaseChange",
+    "apiImpact",
+    "authenticationImpact",
+] as const;
+
+/** Scored axes with impact >= minImpact that cite no evidence. */
+export function axesMissingEvidence(
+    decisions: JevDecisions,
+    minImpact: number,
+): (typeof SCORED_AXES)[number][] {
+    return SCORED_AXES.filter(
+        (axis) =>
+            decisions[axis].value >= minImpact &&
+            (decisions[axis].evidenceIds ?? []).length === 0,
+    );
+}
+
 export function applyPolicy(
     breakdown: RiskBreakdown,
     decisions: JevDecisions,
@@ -65,6 +84,12 @@ export function applyPolicy(
             ? "REVIEW"
             : actionFromLevel(breakdown.riskLevel);
     if (context.truncated && action === "APPROVE") {
+        action = "REVIEW";
+    }
+    if (
+        action === "APPROVE" &&
+        axesMissingEvidence(decisions, config.evidence.minImpactForRequiredEvidence).length > 0
+    ) {
         action = "REVIEW";
     }
     const gates = context.gates ?? [];

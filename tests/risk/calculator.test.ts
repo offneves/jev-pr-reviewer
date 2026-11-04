@@ -3,7 +3,11 @@ import { DEFAULT_CONFIG } from "../../src/config/defaults.js";
 import type { AppConfig } from "../../src/config/schema.js";
 import type { JevDecisions, PrState } from "../../src/schema.js";
 import { calculateRisk } from "../../src/risk/calculator.js";
-import { aggregateConfidence, applyPolicy } from "../../src/risk/policy.js";
+import {
+    aggregateConfidence,
+    applyPolicy,
+    axesMissingEvidence,
+} from "../../src/risk/policy.js";
 
 function decisions(partial: Partial<JevDecisions> = {}): JevDecisions {
     const base: JevDecisions = {
@@ -414,5 +418,62 @@ describe("applyPolicy with deterministic gates (GATE-02/03/04)", () => {
         applyPolicy(before, d, 0.95, DEFAULT_CONFIG, { gates: [block, warn] });
         expect(before).toEqual(snapshot);
         expect(before.score).toBe(11);
+    });
+});
+
+describe("applyPolicy missing evidence (EVID-05/06)", () => {
+    // weights 0/0/0/1 keep the score LOW while authenticationImpact is high.
+    const authOnly: AppConfig = {
+        ...DEFAULT_CONFIG,
+        weights: { security: 1, database: 0, api: 0, authentication: 0 },
+    };
+
+    function lowScoreWithApi(value: number, evidenceIds: string[]) {
+        const d = decisions({ apiImpact: { value, confidence: 0.9, evidenceIds } });
+        const breakdown = calculateRisk(state(), d, authOnly);
+        expect(breakdown.riskLevel).toBe("LOW");
+        return applyPolicy(breakdown, d, 0.95, authOnly);
+    }
+
+    it("forces REVIEW when a scored axis is at 40 with no evidence", () => {
+        expect(lowScoreWithApi(40, []).action).toBe("REVIEW");
+    });
+
+    it("does not force REVIEW when the high axis cites evidence", () => {
+        expect(lowScoreWithApi(40, ["E1"]).action).toBe("APPROVE");
+    });
+
+    it("does not force REVIEW below the threshold", () => {
+        expect(lowScoreWithApi(39, []).action).toBe("APPROVE");
+    });
+
+    it("leaves BLOCK untouched when evidence is missing", () => {
+        const d = decisions({
+            securityImpact: { value: 100, confidence: 0.96, evidenceIds: [] },
+            databaseChange: { value: 100, confidence: 0.96, evidenceIds: [] },
+            apiImpact: { value: 100, confidence: 0.96, evidenceIds: [] },
+            authenticationImpact: { value: 100, confidence: 0.96, evidenceIds: [] },
+        });
+        expect(applyPolicy(calculateRisk(state(), d), d, 0.96).action).toBe("BLOCK");
+    });
+
+    it("uses evidence.minImpactForRequiredEvidence from config", () => {
+        const config: AppConfig = {
+            ...authOnly,
+            evidence: { minImpactForRequiredEvidence: 50 },
+        };
+        const d = decisions({ apiImpact: { value: 45, confidence: 0.9, evidenceIds: [] } });
+        expect(applyPolicy(calculateRisk(state(), d, config), d, 0.95, config).action).toBe(
+            "APPROVE",
+        );
+    });
+
+    it("lists the axes missing evidence", () => {
+        const d = decisions({
+            securityImpact: { value: 70, confidence: 0.9, evidenceIds: ["E1"] },
+            apiImpact: { value: 40, confidence: 0.9, evidenceIds: [] },
+            databaseChange: { value: 90, confidence: 0.9, evidenceIds: [] },
+        });
+        expect(axesMissingEvidence(d, 40)).toEqual(["databaseChange", "apiImpact"]);
     });
 });

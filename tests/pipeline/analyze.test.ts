@@ -116,7 +116,10 @@ describe("analyzeDiff", () => {
 `;
         try {
             await writeFile(path, diff, "utf8");
-            const client = createMockJevClient({ databaseChange: { value: 40, confidence: 0.9 } });
+            // Cites E1 so the missing-evidence rule does not mask the gate effect.
+            const client = createMockJevClient({
+                databaseChange: { value: 40, confidence: 0.9, evidenceIds: ["E1"] },
+            });
             const gated = await analyzeDiff(path, client);
             const ungated = await analyzeDiff(path, client, {
                 ...DEFAULT_CONFIG,

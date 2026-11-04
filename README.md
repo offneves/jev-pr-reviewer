@@ -61,7 +61,7 @@ score = round( sum(impact_i * weight_i) / sum(weight_i) )
 ```
 
    Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
-6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE + impacto alto sem evidência ⇒ nunca APPROVE + gates determinísticos) em APPROVE / REVIEW / BLOCK e recommendation.
+6. **Review policy** transforma nível (+ gate de confiança + desacordo app×JEV de 2+ níveis + diff truncado ⇒ nunca APPROVE + impacto alto sem evidência ⇒ nunca APPROVE + gates determinísticos) em APPROVE / REVIEW / BLOCK e recommendation.
 7. Imprime relatório legível ou JSON.
 
 ### Inventário de mudanças
@@ -198,7 +198,15 @@ Reservados / compatibilidade. **Não afetam o score.**
 
 #### `confidence.threshold` (default: 0.7)
 
-Média das confidences JEV. Se for **estritamente menor** que o threshold → ação **REVIEW** (mesmo que o nível sugerisse APPROVE ou BLOCK).
+Confiança agregada. Se for **estritamente menor** que o threshold → ação **REVIEW** (mesmo que o nível sugerisse APPROVE ou BLOCK).
+
+#### `confidence.scoredOnly` (default: true)
+
+`true`: a confiança agregada é a média dos 4 eixos pontuados (security, database, api, authentication). `false`: média de todas as decisões JEV, advisory incluídas (comportamento antigo).
+
+#### `confidence.disagreementForceReview` (default: true)
+
+Compara o nível de risco calculado pela app com o `riskLevel` advisory do JEV (LOW=0, MEDIUM=1, HIGH=2, CRITICAL=3). Se a distância for **2 ou mais**, APPROVE vira REVIEW (BLOCK não muda) e o `analyze` mostra `Disagreement: app risk X vs JEV risk Y`. Com `false`, o desacordo só é reportado. `--json` expõe `disagreement: { appRiskLevel, jevRiskLevel, ranks, forcedReview }` (ou `null`).
 
 #### `recommendations`
 

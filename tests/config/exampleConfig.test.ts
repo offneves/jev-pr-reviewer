@@ -45,5 +45,7 @@ describe("example config gates", () => {
         });
         expect(cfg.gates.rules).toEqual(DEFAULT_GATE_RULES);
         expect(cfg.evidence.minImpactForRequiredEvidence).toBe(40);
+        expect(cfg.confidence.scoredOnly).toBe(true);
+        expect(cfg.confidence.disagreementForceReview).toBe(true);
     });
 });

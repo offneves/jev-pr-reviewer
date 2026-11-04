@@ -58,8 +58,10 @@
         "highMax": 80
     },
     "confidence": {
-        "description": "Média aritmética das confidences das decisões JEV (0 a 1). Se a média for ESTRITAMENTE MENOR que threshold, a ação vira REVIEW mesmo que o nível fosse APPROVE ou BLOCK. Evita automação quando o modelo está inseguro.",
-        "threshold": 0.7
+        "description": "Confiança agregada (0 a 1). Com scoredOnly=true (default) é a média das confidences dos 4 eixos pontuados (security, database, api, authentication); com false, a média de todas as decisões JEV, advisory incluídas. Se a média for ESTRITAMENTE MENOR que threshold, a ação vira REVIEW mesmo que o nível fosse APPROVE ou BLOCK. disagreementForceReview=true (default): se o nível de risco da app e o riskLevel advisory do JEV ficarem a 2+ níveis de distância (LOW, MEDIUM, HIGH, CRITICAL), APPROVE vira REVIEW (BLOCK não muda).",
+        "threshold": 0.7,
+        "scoredOnly": true,
+        "disagreementForceReview": true
     },
     "recommendations": {
         "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact >= 1.",

@@ -412,3 +412,29 @@ describe("evidence citations in analyze (EVID-04)", () => {
         expect(lines.join("\n")).not.toContain("E2 db/m.sql");
     });
 });
+
+describe("disagreement note (CONF-06)", () => {
+    it("analyze explains a forced review caused by disagreement", () => {
+        const result = sampleResult({
+            action: "REVIEW",
+            riskLevel: "LOW",
+            disagreement: {
+                appRiskLevel: "LOW",
+                jevRiskLevel: "CRITICAL",
+                ranks: 3,
+                forcedReview: true,
+            },
+        });
+        const line = formatAnalyze(result, baseDisplay())
+            .split("\n")
+            .find((l) => /disagree/i.test(l));
+        expect(line).toBeDefined();
+        expect(line).toContain("app risk LOW vs JEV risk CRITICAL");
+        expect(line).toContain("3 levels apart");
+        expect(line).toContain("review required");
+    });
+
+    it("omits the note when levels agree", () => {
+        expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/disagree/i);
+    });
+});

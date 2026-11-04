@@ -141,3 +141,16 @@ export function gatesSection(result: AnalysisResult): string[] {
     }
     return lines;
 }
+
+/** Note shown when app and JEV risk levels are 2+ ranks apart; empty otherwise. */
+export function disagreementNote(result: AnalysisResult): string[] {
+    const d = result.disagreement;
+    if (!d) return [];
+    const effect = d.forcedReview ? "; APPROVE disabled, review required" : "";
+    return [
+        `  ${paint("Disagreement:", BOLD, YELLOW)} ${paint(
+            `app risk ${d.appRiskLevel} vs JEV risk ${d.jevRiskLevel} (${d.ranks} levels apart)${effect}`,
+            YELLOW,
+        )}`,
+    ];
+}

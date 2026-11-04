@@ -10,6 +10,7 @@ import {
     paint,
     pct,
     scoreBar,
+    disagreementNote,
     gatesSection,
     section,
     truncationWarning,
@@ -130,6 +131,11 @@ export function formatAnalyze(
     lines.push("");
     lines.push(`  ${paint("→", CYAN)} ${paint(result.recommendation, BOLD)}`);
     lines.push("");
+    const note = disagreementNote(result);
+    if (note.length > 0) {
+        lines.push(...note);
+        lines.push("");
+    }
     const gates = gatesSection(result);
     if (gates.length > 0) {
         lines.push(...gates);

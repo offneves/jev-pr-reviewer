@@ -18,7 +18,9 @@ export async function analyzeDiff(
         config.diff.maxChars,
     );
     const gates = evaluateGates(inventory, text, config.gates.rules);
-    const decisions = await client.evaluate(state, summarizeInventory(inventory));
+    const decisions = await client.evaluate(state, {
+        inventory: summarizeInventory(inventory),
+    });
     const breakdown = calculateRisk(state, decisions, config);
     const confidence = aggregateConfidence(decisions);
     const policy = applyPolicy(breakdown, decisions, confidence, config, {

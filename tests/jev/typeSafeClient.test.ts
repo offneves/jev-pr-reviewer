@@ -211,7 +211,7 @@ describe("createTypeSafeJevClient", () => {
                 diffText: diff,
                 truncated: false,
             },
-            summary,
+            { inventory: summary },
         );
         expect(calls).toHaveLength(1);
         expect(calls[0].state.diffText).toBe(diff);
@@ -228,6 +228,119 @@ describe("createTypeSafeJevClient", () => {
             blastRadius: ["src/auth"],
             testsOrDocsOnly: false,
         });
+        vi.doUnmock("@typesafe-ai/sdk");
+        vi.resetModules();
+    });
+
+    it("maps evidence choice probabilities to evidenceIds (EVID-02)", async () => {
+        vi.resetModules();
+        const requests: { questions: Record<string, { criteria: Record<string, unknown> }> }[] = [];
+        vi.doMock("@typesafe-ai/sdk", () => ({
+            TypeSafeClient: class {
+                async systemOne(req: { questions: Record<string, { criteria: Record<string, unknown> }> }) {
+                    requests.push(req);
+                    return {
+                        answers: {
+                            breakingChange: { choice: "no", confidence: 0.9 },
+                            securityImpact: { score: 7, confidence: 0.9 },
+                            databaseChange: { score: 0, confidence: 0.9 },
+                            apiImpact: { score: 0, confidence: 0.9 },
+                            authenticationImpact: { score: 0, confidence: 0.9 },
+                            needsHumanReview: { choice: "no", confidence: 0.9 },
+                            riskLevel: { choice: "LOW", confidence: 0.9 },
+                            securityEvidence: {
+                                choice: "E2",
+                                confidence: 0.6,
+                                probabilities: { NONE: 0.05, E1: 0.3, E2: 0.6, E9: 0.5 },
+                            },
+                            databaseEvidence: {
+                                choice: "NONE",
+                                confidence: 0.9,
+                                probabilities: { NONE: 0.9, E1: 0.05, E2: 0.05 },
+                            },
+                        },
+                    };
+                }
+            },
+            choice: (instructions: string, criteria: Record<string, unknown>) => ({
+                type: "choice",
+                instructions,
+                criteria,
+            }),
+            score: (instructions: string, criteria: unknown[]) => ({
+                type: "score",
+                instructions,
+                criteria,
+            }),
+        }));
+        const { createTypeSafeJevClient: create } = await import(
+            "../../src/jev/typeSafeClient.js"
+        );
+        const client = create({ TYPESAFE_API_KEY: "test-key" });
+        const decisions = await client.evaluate(
+            { files: [], additions: 0, deletions: 0, diffText: "", truncated: false },
+            {
+                evidence: [
+                    { id: "E1", path: "src/auth/a.ts", snippet: "+a" },
+                    { id: "E2", path: "src/auth/b.ts", snippet: "+b" },
+                ],
+            },
+        );
+        expect(Object.keys(requests[0].questions.securityEvidence.criteria)).toEqual([
+            "NONE",
+            "E1",
+            "E2",
+        ]);
+        expect(decisions.securityImpact.evidenceIds).toEqual(["E2", "E1"]);
+        expect(decisions.databaseChange.evidenceIds).toEqual([]);
+        expect(decisions.apiImpact.evidenceIds).toEqual([]);
+        vi.doUnmock("@typesafe-ai/sdk");
+        vi.resetModules();
+    });
+
+    it("does not ask evidence questions without a catalog", async () => {
+        vi.resetModules();
+        const requests: { questions: Record<string, unknown> }[] = [];
+        vi.doMock("@typesafe-ai/sdk", () => ({
+            TypeSafeClient: class {
+                async systemOne(req: { questions: Record<string, unknown> }) {
+                    requests.push(req);
+                    return {
+                        answers: {
+                            breakingChange: { choice: "no", confidence: 0.9 },
+                            securityImpact: { score: 0, confidence: 0.9 },
+                            databaseChange: { score: 0, confidence: 0.9 },
+                            apiImpact: { score: 0, confidence: 0.9 },
+                            authenticationImpact: { score: 0, confidence: 0.9 },
+                            needsHumanReview: { choice: "no", confidence: 0.9 },
+                            riskLevel: { choice: "LOW", confidence: 0.9 },
+                        },
+                    };
+                }
+            },
+            choice: (instructions: string, criteria: Record<string, unknown>) => ({
+                type: "choice",
+                instructions,
+                criteria,
+            }),
+            score: (instructions: string, criteria: unknown[]) => ({
+                type: "score",
+                instructions,
+                criteria,
+            }),
+        }));
+        const { createTypeSafeJevClient: create } = await import(
+            "../../src/jev/typeSafeClient.js"
+        );
+        const decisions = await create({ TYPESAFE_API_KEY: "k" }).evaluate({
+            files: [],
+            additions: 0,
+            deletions: 0,
+            diffText: "",
+            truncated: false,
+        });
+        expect(Object.keys(requests[0].questions)).not.toContain("securityEvidence");
+        expect(decisions.securityImpact.evidenceIds).toEqual([]);
         vi.doUnmock("@typesafe-ai/sdk");
         vi.resetModules();
     });

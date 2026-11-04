@@ -75,9 +75,9 @@ describe("analyzeDiff", () => {
         const seen: unknown[] = [];
         const mock = createMockJevClient();
         const client: JevClient = {
-            evaluate: (state, inventory) => {
-                seen.push(inventory);
-                return mock.evaluate(state, inventory);
+            evaluate: (state, context) => {
+                seen.push(context?.inventory);
+                return mock.evaluate(state, context);
             },
         };
         try {

@@ -1,4 +1,5 @@
 import { choice, score } from "@typesafe-ai/sdk";
+import type { EvidenceItem } from "../schema.js";
 
 const yesNo = {
     yes: "Yes",
@@ -69,3 +70,63 @@ export const JEV_DECISION_KEYS = [
     "needsHumanReview",
     "riskLevel",
 ] as const;
+
+/** Scored axis → evidence question key asked in the same System One call. */
+export const EVIDENCE_QUESTION_KEYS = {
+    securityImpact: "securityEvidence",
+    databaseChange: "databaseEvidence",
+    apiImpact: "apiEvidence",
+    authenticationImpact: "authenticationEvidence",
+} as const;
+
+export type ScoredAxis = keyof typeof EVIDENCE_QUESTION_KEYS;
+
+export const NO_EVIDENCE_LABEL = "NONE";
+/** Minimum choice probability for a catalog id to count as cited. */
+export const EVIDENCE_MIN_PROBABILITY = 0.15;
+/** Maximum cited ids per axis. */
+export const EVIDENCE_MAX_IDS = 3;
+
+const AXIS_TOPIC: Record<ScoredAxis, string> = {
+    securityImpact: "security",
+    databaseChange: "database/schema",
+    apiImpact: "public API contract",
+    authenticationImpact: "authentication/authorization",
+};
+
+/** One choice question per scored axis over the app-built catalog; none when it is empty. */
+export function buildEvidenceQuestions(evidence: EvidenceItem[]) {
+    if (evidence.length === 0) return {};
+    const criteria: Record<string, string | { path: string; snippet: string }> = {
+        [NO_EVIDENCE_LABEL]: "None of the listed changes supports this impact",
+    };
+    for (const item of evidence) {
+        criteria[item.id] = { path: item.path, snippet: item.snippet };
+    }
+    const questions: Record<string, ReturnType<typeof choice>> = {};
+    for (const [axis, key] of Object.entries(EVIDENCE_QUESTION_KEYS)) {
+        questions[key] = choice(
+            `Which listed change is the strongest evidence for the ${AXIS_TOPIC[axis as ScoredAxis]} impact of this PR? Answer ${NO_EVIDENCE_LABEL} if none.`,
+            criteria,
+        );
+    }
+    return questions;
+}
+
+/** Catalog ids with probability >= threshold (NONE and unknown ids excluded), highest first. */
+export function evidenceIdsFromProbabilities(
+    probabilities: Record<string, number> | undefined,
+    knownIds: ReadonlySet<string>,
+): string[] {
+    if (!probabilities) return [];
+    return Object.entries(probabilities)
+        .filter(
+            ([label, p]) =>
+                label !== NO_EVIDENCE_LABEL &&
+                knownIds.has(label) &&
+                p >= EVIDENCE_MIN_PROBABILITY,
+        )
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "en", { numeric: true }))
+        .slice(0, EVIDENCE_MAX_IDS)
+        .map(([label]) => label);
+}

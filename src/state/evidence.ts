@@ -1,4 +1,4 @@
-import type { EvidenceItem } from "../schema.js";
+import type { EvidenceItem, JevDecisions } from "../schema.js";
 import { splitFiles } from "./inventory.js";
 import { isSensitivePath } from "./sensitivePaths.js";
 
@@ -53,4 +53,27 @@ export function buildEvidenceCatalog(diffText: string): EvidenceItem[] {
         path: h.path,
         snippet: snippetOf(h.changed),
     }));
+}
+
+const SCORED_AXES = [
+    "securityImpact",
+    "databaseChange",
+    "apiImpact",
+    "authenticationImpact",
+] as const;
+
+/** Drops evidence ids that are not in the catalog (deduped, order kept). */
+export function keepKnownEvidenceIds(
+    decisions: JevDecisions,
+    catalog: EvidenceItem[],
+): JevDecisions {
+    const known = new Set(catalog.map((e) => e.id));
+    const out: JevDecisions = { ...decisions };
+    for (const axis of SCORED_AXES) {
+        out[axis] = {
+            ...decisions[axis],
+            evidenceIds: [...new Set(decisions[axis].evidenceIds.filter((id) => known.has(id)))],
+        };
+    }
+    return out;
 }

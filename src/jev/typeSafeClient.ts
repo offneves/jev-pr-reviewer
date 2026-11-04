@@ -8,9 +8,15 @@ import {
     type RiskLevel,
     type YesNo,
 } from "../schema.js";
-import { buildJevQuestions, scoreToImpact } from "./questions.js";
-import type { InventorySummary } from "../state/inventory.js";
-import type { JevClient } from "./types.js";
+import {
+    EVIDENCE_QUESTION_KEYS,
+    buildEvidenceQuestions,
+    buildJevQuestions,
+    evidenceIdsFromProbabilities,
+    scoreToImpact,
+    type ScoredAxis,
+} from "./questions.js";
+import type { EvaluateContext, JevClient } from "./types.js";
 
 function redactSecrets(message: string): string {
     return message.replace(
@@ -31,11 +37,11 @@ function asRiskLevel(value: string): RiskLevel {
     return RiskLevelSchema.parse(value);
 }
 
-function asImpact(rawScore: number, confidence: number) {
+function asImpact(rawScore: number, confidence: number, evidenceIds: string[]) {
     return {
         value: scoreToImpact(rawScore),
         confidence,
-        evidenceIds: [] as string[],
+        evidenceIds,
     };
 }
 
@@ -54,10 +60,14 @@ export function createTypeSafeJevClient(
     return {
         async evaluate(
             state: PrState,
-            inventory?: InventorySummary,
+            context: EvaluateContext = {},
         ): Promise<JevDecisions> {
+            const { inventory, evidence = [] } = context;
             try {
-                const questions = buildJevQuestions();
+                const questions = {
+                    ...buildJevQuestions(),
+                    ...buildEvidenceQuestions(evidence),
+                };
                 const response = await sdk.systemOne({
                     state: {
                         files: state.files,
@@ -71,6 +81,16 @@ export function createTypeSafeJevClient(
                 });
 
                 const a = response.answers;
+                const knownIds = new Set(evidence.map((e) => e.id));
+                const loose = response.answers as unknown as Record<
+                    string,
+                    { probabilities?: Record<string, number> } | undefined
+                >;
+                const cited = (axis: ScoredAxis) =>
+                    evidenceIdsFromProbabilities(
+                        loose[EVIDENCE_QUESTION_KEYS[axis]]?.probabilities,
+                        knownIds,
+                    );
                 const decisions: JevDecisions = {
                     breakingChange: {
                         value: asYesNo(a.breakingChange.choice),
@@ -79,15 +99,22 @@ export function createTypeSafeJevClient(
                     securityImpact: asImpact(
                         a.securityImpact.score,
                         a.securityImpact.confidence,
+                        cited("securityImpact"),
                     ),
                     databaseChange: asImpact(
                         a.databaseChange.score,
                         a.databaseChange.confidence,
+                        cited("databaseChange"),
                     ),
-                    apiImpact: asImpact(a.apiImpact.score, a.apiImpact.confidence),
+                    apiImpact: asImpact(
+                        a.apiImpact.score,
+                        a.apiImpact.confidence,
+                        cited("apiImpact"),
+                    ),
                     authenticationImpact: asImpact(
                         a.authenticationImpact.score,
                         a.authenticationImpact.confidence,
+                        cited("authenticationImpact"),
                     ),
                     needsHumanReview: {
                         value: asYesNo(a.needsHumanReview.choice),

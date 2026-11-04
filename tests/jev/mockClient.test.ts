@@ -44,3 +44,14 @@ describe("createMockJevClient", () => {
         expect(decisions.riskLevel.value).toBe("CRITICAL");
     });
 });
+
+describe("createMockJevClient evidenceIds", () => {
+    it("returns configured evidenceIds and [] for other scored axes", async () => {
+        const client = createMockJevClient({
+            securityImpact: { value: 80, confidence: 0.9, evidenceIds: ["E1", "E2"] },
+        });
+        const decisions = await client.evaluate(emptyState);
+        expect(decisions.securityImpact.evidenceIds).toEqual(["E1", "E2"]);
+        expect(decisions.databaseChange.evidenceIds).toEqual([]);
+    });
+});

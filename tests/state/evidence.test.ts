@@ -3,6 +3,7 @@ import {
     EVIDENCE_LIMIT,
     SNIPPET_MAX_CHARS,
     buildEvidenceCatalog,
+    keepKnownEvidenceIds,
 } from "../../src/state/evidence.js";
 import { EvidenceItemSchema, JevDecisionsSchema } from "../../src/schema.js";
 
@@ -78,3 +79,30 @@ describe("scored decisions evidenceIds (EVID-02)", () => {
         expect(parsed.authenticationImpact.evidenceIds).toEqual([]);
     });
 });
+
+describe("keepKnownEvidenceIds (unknown ids edge case)", () => {
+    it("drops ids not in the catalog and dedupes", () => {
+        const decisions = JevDecisionsSchema.parse({
+            ...base(),
+            securityImpact: { value: 80, confidence: 0.9, evidenceIds: ["E9", "E1", "E1"] },
+            apiImpact: { value: 50, confidence: 0.9, evidenceIds: ["E7"] },
+        });
+        const out = keepKnownEvidenceIds(decisions, [
+            { id: "E1", path: "a.ts", snippet: "+a" },
+        ]);
+        expect(out.securityImpact.evidenceIds).toEqual(["E1"]);
+        expect(out.apiImpact.evidenceIds).toEqual([]);
+        expect(out.securityImpact.value).toBe(80);
+    });
+});
+
+function base() {
+    return {
+        breakingChange: { value: "no", confidence: 0.9 },
+        needsHumanReview: { value: "no", confidence: 0.9 },
+        riskLevel: { value: "LOW", confidence: 0.9 },
+        databaseChange: { value: 0, confidence: 0.9 },
+        apiImpact: { value: 0, confidence: 0.9 },
+        authenticationImpact: { value: 0, confidence: 0.9 },
+    };
+}

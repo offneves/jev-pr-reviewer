@@ -1,0 +1,10 @@
+diff --git a/src/auth/login.ts b/src/auth/login.ts
+index 1111111..2222222 100644
+--- a/src/auth/login.ts
++++ b/src/auth/login.ts
+@@ -10,4 +10,5 @@ export function login(user: User, password: string) {
+     const ok = verify(user, password);
+-    return ok ? issueToken(user, "1h") : null;
++    const ttl = user.isAdmin ? "12h" : "1h";
++    return ok ? issueToken(user, ttl) : null;
+ }

@@ -123,7 +123,7 @@ O binário prefere `dist/` se existir; depois de alterar o código, rode `npm ru
 | `--config` | Caminho do JSON de política. Sem ela: `jev-pr-reviewer.config.json` no cwd ou defaults. |
 | `--mock` | Usa decisões fake (sem TypeSafe / sem rede). |
 | `--profile` | Com `--mock`: `default`, `busy` ou `critical`. |
-| `--strict` | (`analyze` / `mr`) Sai com código 1 quando a ação é BLOCK, o diff foi truncado, a confiança ficou abaixo do threshold ou um gate `block` casou. Ainda não tem efeito: o comportamento chega com a suite golden (F8). |
+| `--strict` | (`analyze` / `mr`) Sai com código 1 quando a ação é BLOCK, o diff foi truncado, a confiança ficou abaixo do threshold ou um gate `block` casou. O relatório é impresso normalmente e os motivos vão para o stderr (`strict: ...`). Sem a flag, o código de saída continua 0 mesmo com BLOCK. Não vale para `explain` / `mr --explain`. |
 
 Exemplos:
 
@@ -324,6 +324,32 @@ Como o diff é obtido:
 2. Fallback: `git fetch` do ref do MR + `git diff` contra a base (`--base` ou `cli.defaultBaseBranch`)
 
 <br>
+
+## Testes e suite golden
+
+```bash
+npm test            # toda a suite, sem rede (JEV mockado)
+npx vitest run tests/golden   # só os diffs dourados
+```
+
+`fixtures/golden/` tem diffs reais de referência que passam pelo pipeline inteiro (inventário, gates, evidências, truncagem, política) com respostas do JEV fixadas no mock. `tests/golden/golden.test.ts` trava score, nível, ação e gates de cada caso:
+
+| Fixture | O que garante |
+|---------|----------------|
+| `safe-docs` | só docs: score 0, sem gates, APPROVE (nunca BLOCK) |
+| `auth-touch` | gate `auth-path` (warn) e símbolo `login` modificado: REVIEW |
+| `migration` | gate `migration-path` (block): BLOCK sem mudar o score |
+| `secret-leak` | gate `secret-inline` (block): BLOCK mesmo com JEV sem risco |
+| `truncated-large` | truncado com `maxChars` 2000: nunca APPROVE |
+
+Mudou peso, regra ou heurística e um golden quebrou? Ou é regressão, ou o novo valor é intencional e o teste deve ser atualizado no mesmo commit, explicando o motivo.
+
+Para usar como checagem local antes de abrir um PR (sem depender de provedor de CI):
+
+```bash
+git diff main... > /tmp/pr.diff
+node bin/jev-pr-reviewer.mjs analyze /tmp/pr.diff --strict
+```
 
 ## Layout da saída CLI
 

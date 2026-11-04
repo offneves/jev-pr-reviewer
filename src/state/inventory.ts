@@ -285,3 +285,47 @@ export function buildInventory(diffText: string): ChangeInventory {
         testsOrDocsOnly: files.length > 0 && files.every((f) => isTestOrDoc(f.path)),
     };
 }
+
+export const SUMMARY_SYMBOL_LIMIT = 50;
+
+/** Compact, JSON-safe inventory view sent to JEV alongside diffText. */
+export interface InventorySummary {
+    files: { total: number } & Record<FileStatus, number>;
+    languages: Language[];
+    symbols: {
+        added: string[];
+        modified: string[];
+        removed: string[];
+        totalChanged: number;
+    };
+    sensitive: { path: string; category: string }[];
+    blastRadius: string[];
+    testsOrDocsOnly: boolean;
+}
+
+export function summarizeInventory(inventory: ChangeInventory): InventorySummary {
+    const count = (status: FileStatus) =>
+        inventory.files.filter((f) => f.status === status).length;
+    const label = (s: ChangedSymbol) => `${s.path}#${s.name} (${s.kind})`;
+    const list = (items: ChangedSymbol[]) => items.slice(0, SUMMARY_SYMBOL_LIMIT).map(label);
+    const { added, modified, removed } = inventory.symbols;
+    return {
+        files: {
+            total: inventory.files.length,
+            added: count("added"),
+            modified: count("modified"),
+            deleted: count("deleted"),
+            renamed: count("renamed"),
+        },
+        languages: [...new Set(inventory.files.map((f) => f.language))].sort(),
+        symbols: {
+            added: list(added),
+            modified: list(modified),
+            removed: list(removed),
+            totalChanged: added.length + modified.length + removed.length,
+        },
+        sensitive: inventory.sensitive.map((s) => ({ path: s.path, category: s.category })),
+        blastRadius: inventory.blastRadius.directories,
+        testsOrDocsOnly: inventory.testsOrDocsOnly,
+    };
+}

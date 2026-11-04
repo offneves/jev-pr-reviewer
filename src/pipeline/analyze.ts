@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG } from "../config/defaults.js";
 import { AnalysisResultSchema, type AnalysisResult } from "../schema.js";
 import type { JevClient } from "../jev/types.js";
 import { readDiffInput } from "../state/buildState.js";
+import { summarizeInventory } from "../state/inventory.js";
 import { calculateRisk } from "../risk/calculator.js";
 import { aggregateConfidence, applyPolicy } from "../risk/policy.js";
 
@@ -12,7 +13,7 @@ export async function analyzeDiff(
     config: AppConfig = DEFAULT_CONFIG,
 ): Promise<AnalysisResult> {
     const { state, truncation, inventory } = await readDiffInput(path, config.diff.maxChars);
-    const decisions = await client.evaluate(state);
+    const decisions = await client.evaluate(state, summarizeInventory(inventory));
     const breakdown = calculateRisk(state, decisions, config);
     const confidence = aggregateConfidence(decisions);
     const policy = applyPolicy(breakdown, decisions, confidence, config, {

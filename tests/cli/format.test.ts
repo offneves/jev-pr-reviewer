@@ -322,3 +322,33 @@ describe("truncation warning (TRUNC-01)", () => {
         expect(formatExplain(sampleResult(), baseDisplay())).not.toMatch(/diff truncated/i);
     });
 });
+
+describe("State section inventory summary (ENRICH-11)", () => {
+    it("shows file count and total symbol change count", () => {
+        const result = sampleResult({
+            inventory: {
+                files: [
+                    { path: "src/a.ts", status: "added", language: "typescript" },
+                    { path: "src/b.ts", status: "modified", language: "typescript" },
+                    { path: "src/c.py", status: "deleted", language: "python" },
+                ],
+                symbols: {
+                    added: [
+                        { name: "a1", kind: "function", path: "src/a.ts" },
+                        { name: "a2", kind: "function", path: "src/a.ts" },
+                    ],
+                    modified: [{ name: "b", kind: "method", path: "src/b.ts" }],
+                    removed: [{ name: "c", kind: "function", path: "src/c.py" }],
+                },
+                sensitive: [],
+                blastRadius: { directories: ["src"] },
+                testsOrDocsOnly: false,
+            },
+        });
+        const stateLine = formatAnalyze(result, baseDisplay())
+            .split("\n")
+            .find((l) => l.includes("State"));
+        expect(stateLine).toContain("3 files");
+        expect(stateLine).toContain("4 symbols (+2 ~1 -1)");
+    });
+});

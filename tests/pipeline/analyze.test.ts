@@ -6,6 +6,8 @@ import { AnalysisResultSchema } from "../../src/schema.js";
 import { DEFAULT_CONFIG } from "../../src/config/defaults.js";
 import { createMockJevClient } from "../../src/jev/mockClient.js";
 import { analyzeDiff } from "../../src/pipeline/analyze.js";
+import { summarizeInventory } from "../../src/state/inventory.js";
+import type { JevClient } from "../../src/jev/types.js";
 
 const SAMPLE = `diff --git a/src/foo.ts b/src/foo.ts
 --- a/src/foo.ts
@@ -62,6 +64,27 @@ describe("analyzeDiff", () => {
             expect(result.inventory.files.map((f) => f.path)).toEqual(["src/foo.ts"]);
             expect(result.riskLevel).toBe("LOW");
             expect(result.action).toBe("REVIEW");
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("passes the inventory summary to the JEV client (ENRICH-12)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "sample.diff");
+        const seen: unknown[] = [];
+        const mock = createMockJevClient();
+        const client: JevClient = {
+            evaluate: (state, inventory) => {
+                seen.push(inventory);
+                return mock.evaluate(state, inventory);
+            },
+        };
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            const result = await analyzeDiff(path, client);
+            expect(seen).toEqual([summarizeInventory(result.inventory)]);
+            expect(seen[0]).toMatchObject({ files: { total: 1, modified: 1 } });
         } finally {
             await rm(dir, { recursive: true, force: true });
         }

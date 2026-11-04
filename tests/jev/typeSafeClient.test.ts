@@ -154,4 +154,81 @@ describe("createTypeSafeJevClient", () => {
         vi.doUnmock("@typesafe-ai/sdk");
         vi.resetModules();
     });
+
+    it("sends the inventory summary in the System One state payload (ENRICH-12)", async () => {
+        vi.resetModules();
+        const calls: { state: Record<string, unknown> }[] = [];
+        vi.doMock("@typesafe-ai/sdk", () => ({
+            TypeSafeClient: class {
+                async systemOne(req: { state: Record<string, unknown> }) {
+                    calls.push(req);
+                    return {
+                        answers: {
+                            breakingChange: { choice: "no", confidence: 0.9 },
+                            securityImpact: { score: 0, confidence: 0.9 },
+                            databaseChange: { score: 0, confidence: 0.9 },
+                            apiImpact: { score: 0, confidence: 0.9 },
+                            authenticationImpact: { score: 0, confidence: 0.9 },
+                            needsHumanReview: { choice: "no", confidence: 0.9 },
+                            riskLevel: { choice: "LOW", confidence: 0.9 },
+                        },
+                    };
+                }
+            },
+            choice: (instructions: string, criteria: Record<string, unknown>) => ({
+                type: "choice",
+                instructions,
+                criteria,
+            }),
+            score: (instructions: string, criteria: unknown[]) => ({
+                type: "score",
+                instructions,
+                criteria,
+            }),
+        }));
+
+        const { createTypeSafeJevClient: create } = await import(
+            "../../src/jev/typeSafeClient.js"
+        );
+        const { buildInventory, summarizeInventory } = await import(
+            "../../src/state/inventory.js"
+        );
+        const diff = `diff --git a/src/auth/login.ts b/src/auth/login.ts
+--- a/src/auth/login.ts
++++ b/src/auth/login.ts
+@@ -1 +1,3 @@
+ // x
++export function login() {
++}
+`;
+        const summary = summarizeInventory(buildInventory(diff));
+        const client = create({ TYPESAFE_API_KEY: "test-key" });
+        await client.evaluate(
+            {
+                files: ["src/auth/login.ts"],
+                additions: 2,
+                deletions: 0,
+                diffText: diff,
+                truncated: false,
+            },
+            summary,
+        );
+        expect(calls).toHaveLength(1);
+        expect(calls[0].state.diffText).toBe(diff);
+        expect(calls[0].state.inventory).toEqual({
+            files: { total: 1, added: 0, modified: 1, deleted: 0, renamed: 0 },
+            languages: ["typescript"],
+            symbols: {
+                added: ["src/auth/login.ts#login (function)"],
+                modified: [],
+                removed: [],
+                totalChanged: 1,
+            },
+            sensitive: [{ path: "src/auth/login.ts", category: "auth" }],
+            blastRadius: ["src/auth"],
+            testsOrDocsOnly: false,
+        });
+        vi.doUnmock("@typesafe-ai/sdk");
+        vi.resetModules();
+    });
 });

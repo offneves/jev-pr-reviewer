@@ -9,6 +9,7 @@ import {
     type YesNo,
 } from "../schema.js";
 import { buildJevQuestions, scoreToImpact } from "./questions.js";
+import type { InventorySummary } from "../state/inventory.js";
 import type { JevClient } from "./types.js";
 
 function redactSecrets(message: string): string {
@@ -50,7 +51,10 @@ export function createTypeSafeJevClient(
     const sdk = new TypeSafeClient({ apiKey });
 
     return {
-        async evaluate(state: PrState): Promise<JevDecisions> {
+        async evaluate(
+            state: PrState,
+            inventory?: InventorySummary,
+        ): Promise<JevDecisions> {
             try {
                 const questions = buildJevQuestions();
                 const response = await sdk.systemOne({
@@ -60,6 +64,7 @@ export function createTypeSafeJevClient(
                         deletions: state.deletions,
                         truncated: state.truncated,
                         diffText: state.diffText,
+                        ...(inventory ? { inventory: { ...inventory } } : {}),
                     },
                     questions,
                 });

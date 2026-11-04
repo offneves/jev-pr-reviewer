@@ -60,6 +60,12 @@ function renderDecisionBlock(
     return lines;
 }
 
+function symbolSummary(result: AnalysisResult): string {
+    const { added, modified, removed } = result.inventory.symbols;
+    const total = added.length + modified.length + removed.length;
+    return `${total} symbols (+${added.length} ~${modified.length} -${removed.length})`;
+}
+
 export function formatAnalyze(
     result: AnalysisResult,
     display: DisplayConfig,
@@ -112,7 +118,7 @@ export function formatAnalyze(
         : "";
     lines.push("");
     lines.push(
-        `  ${paint(sections.state, DIM)}  ${result.state.files.length} files · +${result.state.additions}/-${result.state.deletions}${truncated}`,
+        `  ${paint(sections.state, DIM)}  ${result.inventory.files.length} files · +${result.state.additions}/-${result.state.deletions} · ${symbolSummary(result)}${truncated}`,
     );
 
     return lines.join("\n");

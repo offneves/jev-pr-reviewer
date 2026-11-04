@@ -262,3 +262,22 @@ describe("loadConfig evidence (EVID-07)", () => {
         }
     });
 });
+
+describe("loadConfig confidence.scoredOnly (CONF-03)", () => {
+    it("defaults to true and accepts false", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            expect((await loadConfig({ cwd: dir })).confidence.scoredOnly).toBe(true);
+            await writeFile(
+                join(dir, DEFAULT_CONFIG_FILENAME),
+                JSON.stringify({ confidence: { scoredOnly: false } }),
+                "utf8",
+            );
+            const cfg = await loadConfig({ cwd: dir });
+            expect(cfg.confidence.scoredOnly).toBe(false);
+            expect(cfg.confidence.threshold).toBe(0.7);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+});

@@ -243,4 +243,27 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("reports scored-only confidence on the result by default", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "sample.diff");
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            const client = createMockJevClient({
+                securityImpact: { value: 0, confidence: 0.8 },
+                riskLevel: { value: "LOW", confidence: 0.1 },
+                breakingChange: { value: "no", confidence: 0.1 },
+                needsHumanReview: { value: "no", confidence: 0.1 },
+            });
+            const scored = await analyzeDiff(path, client);
+            expect(scored.confidence).toBeCloseTo((0.8 + 0.9 * 3) / 4, 10);
+            const all = await analyzeDiff(path, client, {
+                ...DEFAULT_CONFIG,
+                confidence: { ...DEFAULT_CONFIG.confidence, scoredOnly: false },
+            });
+            expect(all.confidence).toBeCloseTo((0.8 + 0.9 * 3 + 0.1 * 3) / 7, 10);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });

@@ -28,7 +28,7 @@ export async function analyzeDiff(
         evidence,
     );
     const breakdown = calculateRisk(state, decisions, config);
-    const confidence = aggregateConfidence(decisions);
+    const confidence = aggregateConfidence(decisions, config.confidence.scoredOnly);
     const policy = applyPolicy(breakdown, decisions, confidence, config, {
         truncated: truncation.truncated,
         gates,

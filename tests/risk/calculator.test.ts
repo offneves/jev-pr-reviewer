@@ -477,3 +477,24 @@ describe("applyPolicy missing evidence (EVID-05/06)", () => {
         expect(axesMissingEvidence(d, 40)).toEqual(["databaseChange", "apiImpact"]);
     });
 });
+
+describe("aggregateConfidence scoredOnly (CONF-01/02)", () => {
+    const d = decisions({
+        securityImpact: { value: 0, confidence: 0.9 },
+        databaseChange: { value: 0, confidence: 0.8 },
+        apiImpact: { value: 0, confidence: 0.7 },
+        authenticationImpact: { value: 0, confidence: 0.6 },
+        breakingChange: { value: "no", confidence: 0.1 },
+        needsHumanReview: { value: "no", confidence: 0.2 },
+        riskLevel: { value: "LOW", confidence: 0.3 },
+    });
+
+    it("averages only the four scored axes by default", () => {
+        expect(aggregateConfidence(d)).toBeCloseTo(0.75, 10);
+        expect(aggregateConfidence(d, true)).toBeCloseTo(0.75, 10);
+    });
+
+    it("averages every decision when scoredOnly is false", () => {
+        expect(aggregateConfidence(d, false)).toBeCloseTo(3.6 / 7, 10);
+    });
+});

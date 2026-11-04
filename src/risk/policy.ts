@@ -11,8 +11,21 @@ export interface PolicyResult {
     recommendation: string;
 }
 
-export function aggregateConfidence(decisions: JevDecisions): number {
-    const values = Object.values(decisions).map((d) => d.confidence);
+const SCORED_KEYS = [
+    "securityImpact",
+    "databaseChange",
+    "apiImpact",
+    "authenticationImpact",
+] as const;
+
+/**
+ * Mean decision confidence. scoredOnly (default) averages the four scored axes;
+ * otherwise every decision, advisory included.
+ */
+export function aggregateConfidence(decisions: JevDecisions, scoredOnly = true): number {
+    const values = scoredOnly
+        ? SCORED_KEYS.map((k) => decisions[k].confidence)
+        : Object.values(decisions).map((d) => d.confidence);
     if (values.length === 0) return 0;
     return values.reduce((a, b) => a + b, 0) / values.length;
 }

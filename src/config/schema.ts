@@ -69,6 +69,7 @@ export const AppConfigSchema = z
             .object({
                 description: z.string().optional(),
                 threshold: z.number().min(0).max(1).optional(),
+                scoredOnly: z.boolean().optional(),
             })
             .partial()
             .optional(),
@@ -138,6 +139,7 @@ export const ResolvedAppConfigSchema = z.object({
         }),
     confidence: z.object({
         threshold: z.number().min(0).max(1),
+        scoredOnly: z.boolean(),
     }),
     recommendations: z.object({
         approve: z.string().min(1),

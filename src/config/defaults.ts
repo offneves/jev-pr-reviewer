@@ -32,6 +32,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     confidence: {
         threshold: 0.7,
+        scoredOnly: true,
     },
     recommendations: {
         approve: "Automatic approval possible",

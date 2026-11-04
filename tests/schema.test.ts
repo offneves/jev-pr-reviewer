@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JevDecisionsSchema } from "../src/schema.js";
+import { ChangeInventorySchema, JevDecisionsSchema } from "../src/schema.js";
 
 const base = {
     breakingChange: { value: "no" as const, confidence: 0.9 },
@@ -51,5 +51,41 @@ describe("JevDecisionsSchema impact axes", () => {
                 authenticationImpact: { value: 0, confidence: 0.9 },
             }),
         ).toThrow();
+    });
+});
+
+describe("ChangeInventorySchema (ENRICH-01)", () => {
+    const inventory = () => ({
+        files: [
+            { path: "src/A.java", status: "added", language: "java" },
+            { path: "src/b.ts", status: "renamed", language: "typescript" },
+        ],
+        symbols: {
+            added: [{ name: "A", kind: "class", path: "src/A.java" }],
+            modified: [{ name: "run", kind: "method", path: "src/A.java" }],
+            removed: [],
+        },
+        sensitive: [{ path: "db/migrations/1.sql", category: "migration" }],
+        blastRadius: { directories: ["src"] },
+        testsOrDocsOnly: false,
+    });
+
+    it("accepts a full inventory shape", () => {
+        const parsed = ChangeInventorySchema.parse(inventory());
+        expect(parsed.files[1].status).toBe("renamed");
+        expect(parsed.symbols.modified[0].kind).toBe("method");
+        expect(parsed.sensitive[0].category).toBe("migration");
+    });
+
+    it("rejects an unknown file status", () => {
+        const bad = inventory();
+        (bad.files[0] as { status: string }).status = "copied";
+        expect(() => ChangeInventorySchema.parse(bad)).toThrow();
+    });
+
+    it("rejects an unknown symbol kind", () => {
+        const bad = inventory();
+        (bad.symbols.added[0] as { kind: string }).kind = "variable";
+        expect(() => ChangeInventorySchema.parse(bad)).toThrow();
     });
 });

@@ -1,11 +1,12 @@
 import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalysisResultSchema } from "../../src/schema.js";
 import { renderUsage } from "citty";
 import { mainCommand, runCli } from "../../src/cli/main.js";
+import { resolve } from "node:path";
 
 vi.mock("../../src/git/fetchMrDiff.js", async (importOriginal) => {
     const actual = await importOriginal<
@@ -397,6 +398,74 @@ describe("CLI", () => {
             errSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });
         }
+    });
+});
+
+describe("CLI --strict (GOLD-05..09)", () => {
+    const golden = (name: string) => resolve(process.cwd(), "fixtures/golden", `${name}.diff`);
+    let cwd: string;
+    let errs: string[];
+
+    beforeEach(() => {
+        // Resolve fixture paths before cwd is redirected to a throwaway dir.
+        cwd = mkdtempSync(join(tmpdir(), "jev-cli-strict-"));
+        errs = [];
+        process.exitCode = undefined;
+    });
+
+    afterEach(() => {
+        process.exitCode = undefined;
+        vi.restoreAllMocks();
+        rmSync(cwd, { recursive: true, force: true });
+    });
+
+    async function run(argv: string[]) {
+        const paths = argv.map((a) => (a.startsWith("golden:") ? golden(a.slice(7)) : a));
+        vi.spyOn(process, "cwd").mockReturnValue(cwd);
+        vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            errs.push(String(chunk));
+            return true;
+        });
+        await runCli(paths);
+        return process.exitCode;
+    }
+
+    it("exits 1 on BLOCK (migration block gate) and reports why", async () => {
+        expect(await run(["analyze", "golden:migration", "--mock", "--strict"])).toBe(1);
+        expect(errs.join("")).toContain("strict: action is BLOCK; block gate matched: migration-path");
+    });
+
+    it("keeps exit code 0 on BLOCK without --strict", async () => {
+        expect(await run(["analyze", "golden:migration", "--mock"])).toBeUndefined();
+        expect(errs.join("")).not.toContain("strict:");
+    });
+
+    it("exits 1 on a truncated diff", async () => {
+        const config = join(cwd, "policy.json");
+        writeFileSync(config, JSON.stringify({ diff: { maxChars: 2000 } }));
+        expect(await run(["analyze", "golden:truncated-large", "--mock", "--strict", "--config", config])).toBe(1);
+        expect(errs.join("")).toContain("diff was truncated");
+    });
+
+    it("exits 1 when confidence is below threshold", async () => {
+        const config = join(cwd, "policy.json");
+        writeFileSync(config, JSON.stringify({ confidence: { threshold: 0.95 } }));
+        expect(await run(["analyze", "golden:safe-docs", "--mock", "--strict", "--config", config])).toBe(1);
+        expect(errs.join("")).toContain("is below threshold 95.0%");
+    });
+
+    it("keeps exit code 0 for a clean APPROVE with --strict", async () => {
+        expect(await run(["analyze", "golden:safe-docs", "--mock", "--strict"])).toBeUndefined();
+        expect(errs.join("")).not.toContain("strict:");
+    });
+
+    it("applies to --json output too", async () => {
+        expect(await run(["analyze", "golden:secret-leak", "--mock", "--json", "--strict"])).toBe(1);
+    });
+
+    it("keeps the error path non-zero when analyze throws", async () => {
+        expect(await run(["analyze", "/no/such/file.diff", "--mock", "--strict"])).toBe(1);
     });
 });
 

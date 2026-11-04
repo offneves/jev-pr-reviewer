@@ -11,6 +11,7 @@ import { DiffFileError } from "../state/buildState.js";
 import { fetchMrDiff, MrDiffError } from "../git/fetchMrDiff.js";
 import { parseMrTarget } from "../git/parseMrTarget.js";
 import { readLastResult, writeLastResult } from "./lastResult.js";
+import { strictFailures } from "./strict.js";
 import {
     DisplayConfigError,
     formatAnalyze,
@@ -49,6 +50,7 @@ async function runAnalyze(
     profile: MockProfile,
     config: AppConfig,
     display: DisplayConfig,
+    strict = false,
 ) {
     const cwd = process.cwd();
     const previous = await readLastResult(cwd);
@@ -63,6 +65,13 @@ async function runAnalyze(
     } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
         process.stderr.write(`Could not save last result: ${reason}\n`);
+    }
+    if (strict) {
+        const failures = strictFailures(result, config);
+        if (failures.length > 0) {
+            process.stderr.write(`strict: ${failures.join("; ")}\n`);
+            process.exitCode = 1;
+        }
     }
 }
 
@@ -86,6 +95,7 @@ async function runMr(options: {
     profile: MockProfile;
     config: AppConfig;
     display: DisplayConfig;
+    strict: boolean;
 }) {
     const parsed = parseMrTarget(options.target);
     const base = options.base ?? options.config.cli.defaultBaseBranch;
@@ -102,7 +112,15 @@ async function runMr(options: {
             return;
         }
 
-        await runAnalyze(fetched.path,options.json,options.mock,options.profile,options.config,options.display);
+        await runAnalyze(
+            fetched.path,
+            options.json,
+            options.mock,
+            options.profile,
+            options.config,
+            options.display,
+            options.strict,
+        );
     } finally {
         await fetched.cleanup();
     }
@@ -171,6 +189,7 @@ export const mainCommand = defineCommand({
                     parseProfile(args.profile),
                     config,
                     display,
+                    Boolean(args.strict),
                 );
             },
         }),
@@ -245,6 +264,7 @@ export const mainCommand = defineCommand({
                     profile: parseProfile(args.profile),
                     config,
                     display,
+                    strict: Boolean(args.strict),
                 });
             },
         }),

@@ -56,8 +56,12 @@ function actionFromLevel(level: RiskLevel): PolicyAction {
     }
 }
 
-export function hasSecurityImpact(decisions: JevDecisions): boolean {
-    return decisions.securityImpact.value >= 1;
+/** Security hold: securityImpact at or above policy.securityHoldMinImpact (default 30). */
+export function hasSecurityImpact(
+    decisions: JevDecisions,
+    minImpact: number = DEFAULT_CONFIG.policy.securityHoldMinImpact,
+): boolean {
+    return decisions.securityImpact.value >= minImpact;
 }
 
 function recommendationFor(
@@ -137,7 +141,7 @@ export function applyPolicy(
         action,
         recommendation: recommendationFor(
             action,
-            hasSecurityImpact(decisions),
+            hasSecurityImpact(decisions, config.policy.securityHoldMinImpact),
             config.recommendations,
         ),
         disagreement,

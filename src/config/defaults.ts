@@ -49,4 +49,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     evidence: {
         minImpactForRequiredEvidence: 40,
     },
+    policy: {
+        securityHoldMinImpact: 30,
+    },
 };

@@ -309,12 +309,42 @@ describe("applyPolicy", () => {
         );
     });
 
-    it("treats securityImpact >= 1 like former security yes", () => {
+});
+
+describe("security hold threshold (SECPOL-01/02/03)", () => {
+    // weights 0/0/0/1 keep risk LOW so APPROVE is the provisional action.
+    const authOnly: AppConfig = {
+        ...DEFAULT_CONFIG,
+        weights: { security: 0, database: 0, api: 0, authentication: 1 },
+    };
+
+    function withSecurity(value: number, config = authOnly) {
         const d = decisions({
-            securityImpact: { value: 1, confidence: 0.9 },
+            securityImpact: { value, confidence: 0.9, evidenceIds: ["E1"] },
         });
-        const policy = applyPolicy(calculateRisk(state(), d), d, 0.9);
-        expect(policy.recommendation).toBe("Security review required");
+        return applyPolicy(calculateRisk(state(), d, config), d, 0.95, config);
+    }
+
+    it("defaults securityHoldMinImpact to 30", () => {
+        expect(DEFAULT_CONFIG.policy.securityHoldMinImpact).toBe(30);
+    });
+
+    it.each([0, 1, 29])("uses the approve text below the threshold (impact %i)", (value) => {
+        const policy = withSecurity(value);
+        expect(policy.action).toBe("APPROVE");
+        expect(policy.recommendation).toBe("Automatic approval possible");
+    });
+
+    it.each([30, 100])("uses blockOrSecurity text at or above the threshold (impact %i)", (value) => {
+        expect(withSecurity(value).recommendation).toBe("Security review required");
+    });
+
+    it("honors a configured threshold, including 0", () => {
+        const zero: AppConfig = { ...authOnly, policy: { securityHoldMinImpact: 0 } };
+        expect(withSecurity(0, zero).recommendation).toBe("Security review required");
+        const fifty: AppConfig = { ...authOnly, policy: { securityHoldMinImpact: 50 } };
+        expect(withSecurity(49, fifty).recommendation).toBe("Automatic approval possible");
+        expect(withSecurity(50, fifty).recommendation).toBe("Security review required");
     });
 });
 

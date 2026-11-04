@@ -104,6 +104,13 @@ export const AppConfigSchema = z
             })
             .partial()
             .optional(),
+        policy: z
+            .object({
+                description: z.string().optional(),
+                securityHoldMinImpact: z.number().int().min(0).max(100).optional(),
+            })
+            .partial()
+            .optional(),
     })
     .passthrough();
 
@@ -156,6 +163,9 @@ export const ResolvedAppConfigSchema = z.object({
     }),
     evidence: z.object({
         minImpactForRequiredEvidence: z.number().int().min(0).max(100),
+    }),
+    policy: z.object({
+        securityHoldMinImpact: z.number().int().min(0).max(100),
     }),
 });
 

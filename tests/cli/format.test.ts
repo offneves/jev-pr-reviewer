@@ -39,6 +39,7 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
             blastRadius: { directories: ["src"] },
             testsOrDocsOnly: false,
         },
+        gates: [],
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },
@@ -350,5 +351,37 @@ describe("State section inventory summary (ENRICH-11)", () => {
             .find((l) => l.includes("State"));
         expect(stateLine).toContain("3 files");
         expect(stateLine).toContain("4 symbols (+2 ~1 -1)");
+    });
+});
+
+describe("deterministic gates section (GATE-06)", () => {
+    const gated = () =>
+        sampleResult({
+            gates: [
+                { id: "migration-path", severity: "block", matchedPaths: ["db/m/1.sql"] },
+                { id: "auth-path", severity: "warn", matchedPaths: ["src/auth/a.ts", "src/auth/b.ts"] },
+            ],
+        });
+
+    it("analyze shows a Deterministic gates section with each gate", () => {
+        const text = formatAnalyze(gated(), baseDisplay());
+        expect(text).toContain("Deterministic gates");
+        const block = text.split("\n").find((l) => l.includes("migration-path"));
+        expect(block).toContain("[BLOCK]");
+        expect(block).toContain("db/m/1.sql");
+        const warn = text.split("\n").find((l) => l.includes("auth-path"));
+        expect(warn).toContain("[WARN]");
+        expect(warn).toContain("src/auth/a.ts, src/auth/b.ts");
+    });
+
+    it("explain shows the Deterministic gates section", () => {
+        const text = formatExplain(gated(), baseDisplay());
+        expect(text).toContain("Deterministic gates");
+        expect(text).toContain("migration-path");
+    });
+
+    it("omits the section when no gate matched", () => {
+        expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/Deterministic gates/);
+        expect(formatExplain(sampleResult(), baseDisplay())).not.toMatch(/Deterministic gates/);
     });
 });

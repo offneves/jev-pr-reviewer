@@ -10,6 +10,7 @@ import {
     paint,
     pct,
     scoreBar,
+    gatesSection,
     section,
     truncationWarning,
     valueTone,
@@ -106,6 +107,11 @@ export function formatAnalyze(
     lines.push("");
     lines.push(`  ${paint("→", CYAN)} ${paint(result.recommendation, BOLD)}`);
     lines.push("");
+    const gates = gatesSection(result);
+    if (gates.length > 0) {
+        lines.push(...gates);
+        lines.push("");
+    }
 
     lines.push(`  ${section(sections.scored)}`);
     lines.push(...renderDecisionBlock(scoredKeys, result, display));

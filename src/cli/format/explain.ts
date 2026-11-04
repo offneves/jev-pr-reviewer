@@ -8,6 +8,7 @@ import {
     paint,
     riskColor,
     scoreBar,
+    gatesSection,
     section,
     truncationWarning,
 } from "./shared.js";
@@ -68,6 +69,12 @@ export function formatExplain(
         lines.push(
             `  ${paint(label, DIM)}  ${impact}  ${paint(bar, DIM)}  ${paint(c.detail, DIM)}`,
         );
+    }
+
+    const gates = gatesSection(result);
+    if (gates.length > 0) {
+        lines.push("");
+        lines.push(...gates);
     }
 
     lines.push("");

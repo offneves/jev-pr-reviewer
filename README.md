@@ -61,7 +61,7 @@ score = round( sum(impact_i * weight_i) / sum(weight_i) )
 ```
 
    Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
-6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE) em APPROVE / REVIEW / BLOCK e recommendation.
+6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE + gates determinísticos) em APPROVE / REVIEW / BLOCK e recommendation.
 7. Imprime relatório legível ou JSON.
 
 ### Inventário de mudanças
@@ -209,6 +209,33 @@ Média das confidences JEV. Se for **estritamente menor** que o threshold → a�
 #### `cli.defaultBaseBranch` (default: `main`)
 
 Base preferida no fallback `git` do `mr` quando `--base` não é passado.
+
+#### `gates.rules` (gates determinísticos)
+
+Regras avaliadas pela app sobre o inventário e o **diff completo** (mesmo se o texto enviado ao JEV foi truncado). **Não mudam o score**, só a ação:
+
+| Severidade | Efeito |
+|------------|--------|
+| `block` | ação vira BLOCK (mesmo com score baixo ou confiança baixa) |
+| `warn` | APPROVE vira REVIEW |
+| `info` | só aparece no relatório |
+
+Defaults:
+
+| id | severity | match |
+|----|----------|-------|
+| `secret-inline` | block | `secretLine` — linha adicionada parecida com credencial (AWS key, private key, tokens GitHub/Slack, `password = "..."`) |
+| `migration-path` | block | `sensitiveCategory:migration` |
+| `secrets-path` | warn | `sensitiveCategory:secrets` |
+| `auth-path` | warn | `sensitiveCategory:auth` |
+| `test-removal` | warn | `testRemoval` — teste deletado, ou ≥ 10 linhas removidas e mais que o dobro das adicionadas |
+| `ci-config-path` | warn | `sensitiveCategory:ci-config` (só detecta, não roda CI) |
+| `docker-file-path` | warn | `sensitiveCategory:docker-file` |
+| `lockfile-change` | info | `sensitiveCategory:lockfile` |
+
+`match` aceita `secretLine`, `testRemoval`, `sensitiveCategory:<auth|secrets|migration|ci-config|docker-file|lockfile>` ou `pathRegex:<regex>`. Definir `gates.rules` **substitui** a lista default inteira (o exemplo em `config/` traz todas). Regra sem `id`/`severity` ou com `match` inválido → erro de config com o caminho do campo.
+
+`--json` expõe `gates: [{ id, severity, matchedPaths }]` (só as que casaram). `analyze` e `explain` mostram a seção **Deterministic gates** quando há alguma.
 
 ### Exemplo numérico
 

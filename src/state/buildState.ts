@@ -26,6 +26,8 @@ export interface DiffInput {
     truncation: Truncation;
     /** Built from the full diff text, not the truncated window. */
     inventory: ChangeInventory;
+    /** Full, untruncated diff text (for app-side rules). */
+    text: string;
 }
 
 export function buildDiffInput(
@@ -64,7 +66,7 @@ export function buildDiffInput(
         diffText,
         truncated: truncation.truncated,
     });
-    return { state, truncation, inventory: buildInventory(text) };
+    return { state, truncation, inventory: buildInventory(text), text };
 }
 
 export function buildStateFromDiffText(

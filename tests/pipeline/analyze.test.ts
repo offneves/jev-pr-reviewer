@@ -103,4 +103,63 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("blocks a migration diff via gates without changing the score (GATE-01/02/04)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "migration.diff");
+        const diff = `diff --git a/db/migrations/0042_users.sql b/db/migrations/0042_users.sql
+--- a/db/migrations/0042_users.sql
++++ b/db/migrations/0042_users.sql
+@@ -1 +1,2 @@
+ -- users
++ALTER TABLE users ADD COLUMN email text;
+`;
+        try {
+            await writeFile(path, diff, "utf8");
+            const client = createMockJevClient({ databaseChange: { value: 40, confidence: 0.9 } });
+            const gated = await analyzeDiff(path, client);
+            const ungated = await analyzeDiff(path, client, {
+                ...DEFAULT_CONFIG,
+                gates: { rules: [] },
+            });
+            expect(gated.gates).toEqual([
+                {
+                    id: "migration-path",
+                    severity: "block",
+                    matchedPaths: ["db/migrations/0042_users.sql"],
+                },
+            ]);
+            expect(gated.action).toBe("BLOCK");
+            expect(ungated.gates).toEqual([]);
+            expect(ungated.action).toBe("APPROVE");
+            expect(gated.score).toBe(ungated.score);
+            expect(gated.contributions).toEqual(ungated.contributions);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("evaluates gates on the full diff even when JEV saw a truncated window", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "secret.diff");
+        const diff = `${SAMPLE}diff --git a/src/cfg.ts b/src/cfg.ts
+--- a/src/cfg.ts
++++ b/src/cfg.ts
+@@ -1 +1 @@
+-x
++const key = "AKIAABCDEFGHIJKLMNOP";
+`;
+        try {
+            await writeFile(path, diff, "utf8");
+            const result = await analyzeDiff(path, createMockJevClient(), {
+                ...DEFAULT_CONFIG,
+                diff: { maxChars: 20 },
+            });
+            expect(result.state.diffText).not.toContain("AKIA");
+            expect(result.gates.map((g) => g.id)).toEqual(["secret-inline"]);
+            expect(result.action).toBe("BLOCK");
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });

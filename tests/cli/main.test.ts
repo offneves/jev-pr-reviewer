@@ -86,6 +86,31 @@ describe("CLI", () => {
             expect(parsed.inventory.files).toEqual([
                 { path: "a.ts", status: "modified", language: "typescript" },
             ]);
+            expect(parsed.gates).toEqual([]);
+        } finally {
+            writeSpy.mockRestore();
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("analyze --json emits gates as id/severity/matchedPaths (GATE-05)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cli-gates-"));
+        const path = join(dir, "auth.diff");
+        const logs: string[] = [];
+        const writeSpy = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation((chunk) => {
+                logs.push(String(chunk));
+                return true;
+            });
+        try {
+            await writeFile(path, SAMPLE.replaceAll("a.ts", "src/auth/login.ts"), "utf8");
+            await runCli(["analyze", path, "--json", "--mock"]);
+            const parsed = JSON.parse(logs.join(""));
+            expect(parsed.gates).toEqual([
+                { id: "auth-path", severity: "warn", matchedPaths: ["src/auth/login.ts"] },
+            ]);
+            expect(parsed.action).toBe("REVIEW");
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

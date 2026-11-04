@@ -119,3 +119,25 @@ export function truncationWarning(result: AnalysisResult): string[] {
     }
     return lines;
 }
+
+export const GATES_SECTION_TITLE = "Deterministic gates";
+
+function gateTone(severity: string): string {
+    if (severity === "block") return RED;
+    if (severity === "warn") return YELLOW;
+    return DIM;
+}
+
+/** Section listing matched gates; empty when no gate matched. */
+export function gatesSection(result: AnalysisResult): string[] {
+    if (result.gates.length === 0) return [];
+    const idWidth = Math.max(...result.gates.map((g) => g.id.length));
+    const lines = [`  ${section(GATES_SECTION_TITLE)}`];
+    for (const gate of result.gates) {
+        const tag = paint(`[${gate.severity.toUpperCase()}]`.padEnd(7, " "), BOLD, gateTone(gate.severity));
+        lines.push(
+            `  ${tag}  ${padLabel(gate.id, idWidth)}  ${paint(gate.matchedPaths.join(", "), DIM)}`,
+        );
+    }
+    return lines;
+}

@@ -87,6 +87,13 @@ export const ChangeInventorySchema = z.object({
 });
 export type ChangeInventory = z.infer<typeof ChangeInventorySchema>;
 
+export const GateResultSchema = z.object({
+    id: z.string().min(1),
+    severity: z.enum(["info", "warn", "block"]),
+    matchedPaths: z.array(z.string()),
+});
+export type GateResultJson = z.infer<typeof GateResultSchema>;
+
 export const JevDecisionsSchema = z.object({
     breakingChange: DecisionSchema(YesNoSchema),
     securityImpact: DecisionSchema(ImpactSchema),
@@ -111,6 +118,7 @@ export const AnalysisResultSchema = z.object({
     state: PrStateSchema,
     truncation: TruncationSchema,
     inventory: ChangeInventorySchema,
+    gates: z.array(GateResultSchema),
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

@@ -138,7 +138,7 @@ export function truncateDiff(text: string, maxChars: number): TruncateResult {
         const cut = skipped.text.slice(0, room);
         out += cut;
         // Only a cut that reaches hunk content counts as a contributed hunk.
-        if (cut.includes("\n@@")  || cut.startsWith("@@")) {
+        if (cut.includes("\n@@")) {
             markKept(skipped.section);
         }
     }

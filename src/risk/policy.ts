@@ -58,10 +58,7 @@ function actionFromLevel(level: RiskLevel): PolicyAction {
 }
 
 /** Security hold: securityImpact at or above policy.securityHoldMinImpact (default 30). */
-export function hasSecurityImpact(
-    decisions: JevDecisions,
-    minImpact: number = DEFAULT_CONFIG.policy.securityHoldMinImpact,
-): boolean {
+export function hasSecurityImpact(decisions: JevDecisions, minImpact: number): boolean {
     return decisions.securityImpact.value >= minImpact;
 }
 

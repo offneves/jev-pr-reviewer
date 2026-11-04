@@ -11,7 +11,7 @@ export async function analyzeDiff(
     client: JevClient,
     config: AppConfig = DEFAULT_CONFIG,
 ): Promise<AnalysisResult> {
-    const { state, truncation } = await readDiffInput(path, config.diff.maxChars);
+    const { state, truncation, inventory } = await readDiffInput(path, config.diff.maxChars);
     const decisions = await client.evaluate(state);
     const breakdown = calculateRisk(state, decisions, config);
     const confidence = aggregateConfidence(decisions);
@@ -22,6 +22,7 @@ export async function analyzeDiff(
     return AnalysisResultSchema.parse({
         state,
         truncation,
+        inventory,
         decisions,
         score: breakdown.score,
         riskLevel: breakdown.riskLevel,

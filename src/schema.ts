@@ -110,6 +110,7 @@ export type ScoreContribution = z.infer<typeof ScoreContributionSchema>;
 export const AnalysisResultSchema = z.object({
     state: PrStateSchema,
     truncation: TruncationSchema,
+    inventory: ChangeInventorySchema,
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

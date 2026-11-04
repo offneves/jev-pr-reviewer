@@ -1,6 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { DEFAULT_CONFIG } from "../config/defaults.js";
-import { PrStateSchema, type PrState, type Truncation } from "../schema.js";
+import {
+    PrStateSchema,
+    type ChangeInventory,
+    type PrState,
+    type Truncation,
+} from "../schema.js";
+import { buildInventory } from "./inventory.js";
 import { truncateDiff } from "./truncate.js";
 
 export const DIFF_TEXT_LIMIT = DEFAULT_CONFIG.diff.maxChars;
@@ -18,6 +24,8 @@ export class DiffFileError extends Error {
 export interface DiffInput {
     state: PrState;
     truncation: Truncation;
+    /** Built from the full diff text, not the truncated window. */
+    inventory: ChangeInventory;
 }
 
 export function buildDiffInput(
@@ -56,7 +64,7 @@ export function buildDiffInput(
         diffText,
         truncated: truncation.truncated,
     });
-    return { state, truncation };
+    return { state, truncation, inventory: buildInventory(text) };
 }
 
 export function buildStateFromDiffText(

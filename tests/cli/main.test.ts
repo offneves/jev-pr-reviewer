@@ -83,6 +83,9 @@ describe("CLI", () => {
                 prioritizedPaths: [],
             });
             expect(parsed.action).not.toBe("APPROVE");
+            expect(parsed.inventory.files).toEqual([
+                { path: "a.ts", status: "modified", language: "typescript" },
+            ]);
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

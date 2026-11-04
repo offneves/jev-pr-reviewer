@@ -36,6 +36,10 @@ describe("analyzeDiff", () => {
                 keptChars: SAMPLE.length,
                 prioritizedPaths: [],
             });
+            expect(result.inventory.files).toEqual([
+                { path: "src/foo.ts", status: "modified", language: "typescript" },
+            ]);
+            expect(result.inventory.blastRadius.directories).toEqual(["src"]);
             expect(result.decisions.securityImpact.value).toBe(100);
             expect(result.score).toBeGreaterThanOrEqual(0);
             expect(["APPROVE", "REVIEW", "BLOCK"]).toContain(result.action);
@@ -54,6 +58,8 @@ describe("analyzeDiff", () => {
                 diff: { ...DEFAULT_CONFIG.diff, maxChars: 20 },
             });
             expect(result.truncation.truncated).toBe(true);
+            // Inventory still covers the full diff even when JEV sees a cut.
+            expect(result.inventory.files.map((f) => f.path)).toEqual(["src/foo.ts"]);
             expect(result.riskLevel).toBe("LOW");
             expect(result.action).toBe("REVIEW");
         } finally {

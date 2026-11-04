@@ -28,6 +28,17 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
             keptChars: 4,
             prioritizedPaths: [],
         },
+        inventory: {
+            files: [{ path: "src/foo.ts", status: "modified", language: "typescript" }],
+            symbols: {
+                added: [{ name: "foo", kind: "function", path: "src/foo.ts" }],
+                modified: [],
+                removed: [],
+            },
+            sensitive: [],
+            blastRadius: { directories: ["src"] },
+            testsOrDocsOnly: false,
+        },
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },

@@ -340,9 +340,9 @@ describe("security hold threshold (SECPOL-01/02/03)", () => {
     });
 
     it("honors a configured threshold, including 0", () => {
-        const zero: AppConfig = { ...authOnly, policy: { securityHoldMinImpact: 0 } };
+        const zero: AppConfig = { ...authOnly, policy: { ...authOnly.policy, securityHoldMinImpact: 0 } };
         expect(withSecurity(0, zero).recommendation).toBe("Security review required");
-        const fifty: AppConfig = { ...authOnly, policy: { securityHoldMinImpact: 50 } };
+        const fifty: AppConfig = { ...authOnly, policy: { ...authOnly.policy, securityHoldMinImpact: 50 } };
         expect(withSecurity(49, fifty).recommendation).toBe("Automatic approval possible");
         expect(withSecurity(50, fifty).recommendation).toBe("Security review required");
     });
@@ -598,5 +598,56 @@ describe("applyPolicy disagreement with JEV riskLevel (CONF-04/05)", () => {
             ranks: 3,
             forcedReview: false,
         });
+    });
+});
+
+describe("neverApproveGlobs (SECPOL-05/06)", () => {
+    const withGlobs = (globs: string[]): AppConfig => ({
+        ...DEFAULT_CONFIG,
+        policy: { ...DEFAULT_CONFIG.policy, neverApproveGlobs: globs },
+    });
+
+    function approveCase(config: AppConfig, paths?: string[]) {
+        const d = decisions();
+        const breakdown = calculateRisk(state(), d, config);
+        expect(breakdown.riskLevel).toBe("LOW");
+        return applyPolicy(breakdown, d, 0.95, config, { paths });
+    }
+
+    it("turns APPROVE into REVIEW when a changed path matches a glob", () => {
+        const policy = approveCase(withGlobs(["**/security/**"]), [
+            "src/ui/a.ts",
+            "src/security/tokens.ts",
+        ]);
+        expect(policy.action).toBe("REVIEW");
+    });
+
+    it("keeps APPROVE when no path matches", () => {
+        expect(approveCase(withGlobs(["**/security/**"]), ["src/ui/a.ts"]).action).toBe(
+            "APPROVE",
+        );
+    });
+
+    it("does not change action when the glob list is empty", () => {
+        expect(approveCase(withGlobs([]), ["src/security/tokens.ts"]).action).toBe("APPROVE");
+    });
+
+    it("no-ops when paths are unknown (no inventory)", () => {
+        expect(approveCase(withGlobs(["**"]), undefined).action).toBe("APPROVE");
+    });
+
+    it("keeps BLOCK untouched", () => {
+        const config = withGlobs(["**"]);
+        const d = decisions({
+            securityImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            databaseChange: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            apiImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            authenticationImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            riskLevel: { value: "CRITICAL", confidence: 0.96 },
+        });
+        const policy = applyPolicy(calculateRisk(state(), d, config), d, 0.96, config, {
+            paths: ["src/a.ts"],
+        });
+        expect(policy.action).toBe("BLOCK");
     });
 });

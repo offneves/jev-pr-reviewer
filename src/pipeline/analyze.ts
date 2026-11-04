@@ -32,6 +32,7 @@ export async function analyzeDiff(
     const policy = applyPolicy(breakdown, decisions, confidence, config, {
         truncated: truncation.truncated,
         gates,
+        paths: inventory.files.map((f) => f.path),
     });
 
     return AnalysisResultSchema.parse({

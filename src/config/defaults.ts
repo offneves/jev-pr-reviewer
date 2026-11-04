@@ -51,5 +51,6 @@ export const DEFAULT_CONFIG: AppConfig = {
     },
     policy: {
         securityHoldMinImpact: 30,
+        neverApproveGlobs: [],
     },
 };

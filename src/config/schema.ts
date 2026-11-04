@@ -108,6 +108,7 @@ export const AppConfigSchema = z
             .object({
                 description: z.string().optional(),
                 securityHoldMinImpact: z.number().int().min(0).max(100).optional(),
+                neverApproveGlobs: z.array(z.string().min(1)).optional(),
             })
             .partial()
             .optional(),
@@ -166,6 +167,7 @@ export const ResolvedAppConfigSchema = z.object({
     }),
     policy: z.object({
         securityHoldMinImpact: z.number().int().min(0).max(100),
+        neverApproveGlobs: z.array(z.string().min(1)),
     }),
 });
 

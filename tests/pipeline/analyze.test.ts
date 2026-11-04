@@ -266,4 +266,21 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("applies neverApproveGlobs to inventory paths end to end", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "sample.diff");
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            const plain = await analyzeDiff(path, createMockJevClient());
+            expect(plain.action).toBe("APPROVE");
+            const guarded = await analyzeDiff(path, createMockJevClient(), {
+                ...DEFAULT_CONFIG,
+                policy: { ...DEFAULT_CONFIG.policy, neverApproveGlobs: ["src/*.ts"] },
+            });
+            expect(guarded.action).toBe("REVIEW");
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });

@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG } from "../config/defaults.js";
 import type { Disagreement, JevDecisions, RiskLevel } from "../schema.js";
 import type { RiskBreakdown } from "./calculator.js";
 import type { GateResult } from "./gates.js";
+import { matchesAnyGlob } from "./glob.js";
 
 export type PolicyAction = "APPROVE" | "REVIEW" | "BLOCK";
 
@@ -82,6 +83,8 @@ export interface PolicyContext {
     truncated?: boolean;
     /** Matched deterministic gates: block forces BLOCK, warn prevents APPROVE. */
     gates?: GateResult[];
+    /** Changed file paths (inventory); undefined means unknown and skips path rules. */
+    paths?: string[];
 }
 
 const SCORED_AXES = [
@@ -127,6 +130,14 @@ export function applyPolicy(
     if (
         action === "APPROVE" &&
         axesMissingEvidence(decisions, config.evidence.minImpactForRequiredEvidence).length > 0
+    ) {
+        action = "REVIEW";
+    }
+    const neverApprove = config.policy.neverApproveGlobs;
+    if (
+        action === "APPROVE" &&
+        neverApprove.length > 0 &&
+        (context.paths ?? []).some((p) => matchesAnyGlob(p, neverApprove))
     ) {
         action = "REVIEW";
     }

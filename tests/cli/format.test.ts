@@ -22,6 +22,12 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
             diffText: "diff",
             truncated: false,
         },
+        truncation: {
+            truncated: false,
+            originalChars: 4,
+            keptChars: 4,
+            prioritizedPaths: [],
+        },
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },

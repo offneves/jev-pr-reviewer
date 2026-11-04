@@ -25,6 +25,15 @@ export const PrStateSchema = z.object({
 
 export type PrState = z.infer<typeof PrStateSchema>;
 
+export const TruncationSchema = z.object({
+    truncated: z.boolean(),
+    originalChars: z.number().int().nonnegative(),
+    keptChars: z.number().int().nonnegative(),
+    prioritizedPaths: z.array(z.string()),
+});
+
+export type Truncation = z.infer<typeof TruncationSchema>;
+
 export const JevDecisionsSchema = z.object({
     breakingChange: DecisionSchema(YesNoSchema),
     securityImpact: DecisionSchema(ImpactSchema),
@@ -47,6 +56,7 @@ export type ScoreContribution = z.infer<typeof ScoreContributionSchema>;
 
 export const AnalysisResultSchema = z.object({
     state: PrStateSchema,
+    truncation: TruncationSchema,
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

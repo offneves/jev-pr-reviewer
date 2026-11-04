@@ -29,6 +29,12 @@ describe("analyzeDiff", () => {
             );
             expect(() => AnalysisResultSchema.parse(result)).not.toThrow();
             expect(result.state.additions).toBe(2);
+            expect(result.truncation).toEqual({
+                truncated: false,
+                originalChars: SAMPLE.length,
+                keptChars: SAMPLE.length,
+                prioritizedPaths: [],
+            });
             expect(result.decisions.securityImpact.value).toBe(100);
             expect(result.score).toBeGreaterThanOrEqual(0);
             expect(["APPROVE", "REVIEW", "BLOCK"]).toContain(result.action);

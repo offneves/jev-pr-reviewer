@@ -59,6 +59,36 @@ describe("CLI", () => {
         }
     });
 
+    it("analyze --json includes truncation metadata for a truncated diff (TRUNC-04)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cli-trunc-"));
+        const path = join(dir, "sample.diff");
+        const configPath = join(dir, "policy.json");
+        const logs: string[] = [];
+        const writeSpy = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation((chunk) => {
+                logs.push(String(chunk));
+                return true;
+            });
+
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            await writeFile(configPath, JSON.stringify({ diff: { maxChars: 20 } }), "utf8");
+            await runCli(["analyze", path, "--json", "--mock", "--config", configPath]);
+            const parsed = AnalysisResultSchema.parse(JSON.parse(logs.join("")));
+            expect(parsed.truncation).toEqual({
+                truncated: true,
+                originalChars: SAMPLE.length,
+                keptChars: 20,
+                prioritizedPaths: [],
+            });
+            expect(parsed.action).not.toBe("APPROVE");
+        } finally {
+            writeSpy.mockRestore();
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
     it("analyze --json emits schema-valid JSON with score fields", async () => {
         const dir = await mkdtemp(join(tmpdir(), "jev-cli-json-"));
         const path = join(dir, "sample.diff");

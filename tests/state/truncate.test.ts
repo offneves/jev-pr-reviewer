@@ -58,6 +58,27 @@ describe("truncation budget use", () => {
     });
 });
 
+describe("truncation maxChars boundary (TRUNC-07)", () => {
+    it("keeps a sensitive section whole when maxChars equals its length", () => {
+        const { state } = buildDiffInput(MIXED, AUTH.length);
+        expect(state.diffText).toBe(AUTH);
+    });
+
+    it("cuts a sensitive section that is one char over maxChars", () => {
+        const { state } = buildDiffInput(MIXED, AUTH.length - 1);
+        expect(state.diffText).toBe(AUTH.slice(0, AUTH.length - 1));
+        expect(state.diffText.length).toBe(AUTH.length - 1);
+    });
+});
+
+describe("prioritizedPaths for header-only cuts (TRUNC-06)", () => {
+    it("does not list a sensitive path when only part of its file header was kept", () => {
+        const { state, truncation } = buildDiffInput(MIXED, 20);
+        expect(state.diffText).toBe(AUTH.slice(0, 20));
+        expect(truncation.prioritizedPaths).toEqual([]);
+    });
+});
+
 describe("truncation metadata (TRUNC-04)", () => {
     it("reports truncated, originalChars, keptChars, prioritizedPaths when cut", () => {
         const { state, truncation } = buildDiffInput(MIXED, MAX);

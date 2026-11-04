@@ -10,6 +10,7 @@ import { analyzeDiff } from "../pipeline/analyze.js";
 import { DiffFileError } from "../state/buildState.js";
 import { fetchMrDiff, MrDiffError } from "../git/fetchMrDiff.js";
 import { parseMrTarget } from "../git/parseMrTarget.js";
+import { readLastResult, writeLastResult } from "./lastResult.js";
 import {
     DisplayConfigError,
     formatAnalyze,
@@ -49,12 +50,20 @@ async function runAnalyze(
     config: AppConfig,
     display: DisplayConfig,
 ) {
+    const cwd = process.cwd();
+    const previous = await readLastResult(cwd);
     const result = await analyzeDiff(path, resolveClient(mock, profile), config);
     if (json) {
         process.stdout.write(`${JSON.stringify(AnalysisResultSchema.parse(result), null, 4)}\n`);
-        return;
+    } else {
+        process.stdout.write(`${formatAnalyze(result, display, previous)}\n`);
     }
-    process.stdout.write(`${formatAnalyze(result, display)}\n`);
+    try {
+        await writeLastResult(cwd, result);
+    } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`Could not save last result: ${reason}\n`);
+    }
 }
 
 async function runExplain(

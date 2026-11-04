@@ -11,3 +11,4 @@ jev-pr-reviewer.config.json
 .specs/
 .cursor/
 docs/
+.jev-last-result.json

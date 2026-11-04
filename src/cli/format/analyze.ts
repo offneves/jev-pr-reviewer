@@ -91,9 +91,19 @@ function symbolSummary(result: AnalysisResult): string {
     return `${total} symbols (+${added.length} ~${modified.length} -${removed.length})`;
 }
 
+function scoreDeltaLine(result: AnalysisResult, previous?: { score: number } | null): string[] {
+    if (!previous || previous.score === result.score) return [];
+    const diff = result.score - previous.score;
+    const signed = diff > 0 ? `+${diff}` : String(diff);
+    return [
+        `  ${paint("Since last run", DIM)}  ${paint(signed, BOLD, diff > 0 ? YELLOW : CYAN)} (${previous.score} → ${result.score})`,
+    ];
+}
+
 export function formatAnalyze(
     result: AnalysisResult,
     display: DisplayConfig,
+    previous?: { score: number } | null,
 ): string {
     const sections = display.analyze.sections;
     const scoredKeys = keysForGroup(result, display.analyze.scored.order);
@@ -125,6 +135,7 @@ export function formatAnalyze(
     lines.push(
         `  ${paint("Score", DIM)}       ${scoreBar(result.score)}  ${paint(String(result.score), BOLD)}/100`,
     );
+    lines.push(...scoreDeltaLine(result, previous));
     lines.push(
         `  ${paint(sections.confidence, DIM)}  ${paint(pct(result.confidence), BOLD)}`,
     );

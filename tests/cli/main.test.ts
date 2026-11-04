@@ -1,7 +1,8 @@
 import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalysisResultSchema } from "../../src/schema.js";
 import { runCli } from "../../src/cli/main.js";
 
@@ -27,10 +28,18 @@ const SAMPLE = `diff --git a/a.ts b/a.ts
 
 describe("CLI", () => {
     const originalExitCode = process.exitCode;
+    let cwd: string;
+
+    beforeEach(() => {
+        // Keep .jev-last-result.json and config lookup inside a throwaway cwd.
+        cwd = mkdtempSync(join(tmpdir(), "jev-cli-cwd-"));
+        vi.spyOn(process, "cwd").mockReturnValue(cwd);
+    });
 
     afterEach(() => {
         process.exitCode = originalExitCode;
         vi.restoreAllMocks();
+        rmSync(cwd, { recursive: true, force: true });
     });
 
     it("analyze prints human-readable risk and decisions with --mock", async () => {
@@ -120,6 +129,63 @@ describe("CLI", () => {
                 { id: "auth-path", severity: "warn", matchedPaths: ["src/auth/login.ts"] },
             ]);
             expect(parsed.action).toBe("REVIEW");
+        } finally {
+            writeSpy.mockRestore();
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("writes .jev-last-result.json and shows the score delta on the next run (TRUST-04/05)", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cli-last-"));
+        const path = join(dir, "sample.diff");
+        const logs: string[] = [];
+        const writeSpy = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation((chunk) => {
+                logs.push(String(chunk));
+                return true;
+            });
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            await runCli(["analyze", path, "--mock"]);
+            const saved = JSON.parse(readFileSync(join(cwd, ".jev-last-result.json"), "utf8"));
+            expect(saved).toMatchObject({ score: 0, action: "APPROVE" });
+            expect(logs.join("")).not.toContain("Since last run");
+
+            logs.length = 0;
+            await runCli(["analyze", path, "--mock", "--profile", "busy"]);
+            const out = logs.join("");
+            expect(out).toContain("Since last run");
+            expect(out).toContain("+63 (0 → 63)");
+            expect(
+                JSON.parse(readFileSync(join(cwd, ".jev-last-result.json"), "utf8")).score,
+            ).toBe(63);
+        } finally {
+            writeSpy.mockRestore();
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("ignores a corrupt .jev-last-result.json without failing", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cli-corrupt-"));
+        const path = join(dir, "sample.diff");
+        const logs: string[] = [];
+        const writeSpy = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation((chunk) => {
+                logs.push(String(chunk));
+                return true;
+            });
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            await writeFile(join(cwd, ".jev-last-result.json"), "{not json", "utf8");
+            await runCli(["analyze", path, "--mock"]);
+            expect(process.exitCode).not.toBe(1);
+            expect(logs.join("")).toContain("PR Risk Analysis");
+            expect(logs.join("")).not.toContain("Since last run");
+            expect(
+                JSON.parse(readFileSync(join(cwd, ".jev-last-result.json"), "utf8")).score,
+            ).toBe(0);
         } finally {
             writeSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });

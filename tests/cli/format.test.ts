@@ -488,3 +488,23 @@ describe("summary and hotspots in analyze (TRUST-01/02)", () => {
         expect(formatAnalyze(sampleResult({ hotspots: [] }), baseDisplay())).not.toContain("Hotspots");
     });
 });
+
+describe("score delta since last run (TRUST-05)", () => {
+    const deltaLine = (text: string) => text.split("\n").find((l) => l.includes("Since last run"));
+
+    it("shows a positive difference with previous and current score", () => {
+        const line = deltaLine(formatAnalyze(sampleResult(), baseDisplay(), { score: 40 }));
+        expect(line).toContain("+11 (40 → 51)");
+    });
+
+    it("shows a negative difference", () => {
+        const line = deltaLine(formatAnalyze(sampleResult(), baseDisplay(), { score: 60 }));
+        expect(line).toContain("-9 (60 → 51)");
+    });
+
+    it("omits the delta when there is no previous run or the score is unchanged", () => {
+        expect(deltaLine(formatAnalyze(sampleResult(), baseDisplay()))).toBeUndefined();
+        expect(deltaLine(formatAnalyze(sampleResult(), baseDisplay(), null))).toBeUndefined();
+        expect(deltaLine(formatAnalyze(sampleResult(), baseDisplay(), { score: 51 }))).toBeUndefined();
+    });
+});

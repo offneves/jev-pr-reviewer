@@ -52,16 +52,33 @@ Mock embutido (`--mock`) permite rodar sem rede e sem API key.
 
 1. Lê um arquivo `.diff` (local ou baixado de um MR).
 2. Monta o **state**: arquivos, additions, deletions, texto do diff (com teto `diff.maxChars`).
-3. Envia o state ao **JEV** (real ou mock) e recebe impactos 0–100 + decisões advisory.
-4. **Risk calculator** calcula a média ponderada dos 4 impactos com os `weights` do JSON:
+3. Monta o **inventário** determinístico do diff completo (ver abaixo).
+4. Envia o state + resumo do inventário ao **JEV** (real ou mock) e recebe impactos 0–100 + decisões advisory.
+5. **Risk calculator** calcula a média ponderada dos 4 impactos com os `weights` do JSON:
 
 ```text
 score = round( sum(impact_i * weight_i) / sum(weight_i) )
 ```
 
    Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
-5. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE) em APPROVE / REVIEW / BLOCK e recommendation.
-6. Imprime relatório legível ou JSON.
+6. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE) em APPROVE / REVIEW / BLOCK e recommendation.
+7. Imprime relatório legível ou JSON.
+
+### Inventário de mudanças
+
+Gerado só a partir do texto do diff (sem rede, sem AST), sempre do diff inteiro, mesmo quando o texto enviado ao JEV foi truncado. Não altera o score. Aparece em `--json` como `inventory`:
+
+| Campo | Conteúdo |
+|-------|----------|
+| `files[]` | `path`, `status` (`added` / `modified` / `deleted` / `renamed`), `language` (`java` / `javascript` / `typescript` / `python` / `other`) |
+| `symbols.added` / `modified` / `removed` | `name`, `kind` (`function` / `method` / `class` / `other`), `path` |
+| `sensitive[]` | `path` + `category` (`auth`, `secrets`, `migration`, `ci-config`, `docker-file`, `lockfile`) |
+| `blastRadius.directories` | diretórios pai tocados, ordenados e únicos (`.` = raiz) |
+| `testsOrDocsOnly` | `true` quando todos os arquivos são testes ou docs |
+
+Símbolos são heurísticas por regex (Java, JS/TS, Python): linhas de declaração adicionadas/removidas, declaração alterada (removida e re-adicionada) conta como `modified`, e mudança no corpo conta como `modified` para a declaração de contexto mais próxima ou a indicada no cabeçalho `@@` do git. Outras linguagens ficam com listas vazias.
+
+O JEV recebe um resumo (`state.inventory`): contagem por status, linguagens, até 50 símbolos por lista (`path#nome (kind)`), paths sensíveis, blast radius e `testsOrDocsOnly`.
 
 `files.tiers` e `lines.tiers` **não entram no score** (só métricas de state / compatibilidade de config).
 
@@ -262,6 +279,7 @@ No `analyze` pretty:
 
 - **Scored decisions** — impactos 0–100 (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
 - **Advisory · not in score** — `breakingChange`, `needsHumanReview`, `riskLevel`
+- **State** — arquivos do inventário, `+adições/-remoções` e símbolos alterados (`N symbols (+adicionados ~modificados -removidos)`)
 
 No `explain`: contribuições com impacto e weight, na ordem de `explain.signals.order` (sem sort por pontos).
 

@@ -35,6 +35,7 @@ function asImpact(rawScore: number, confidence: number) {
     return {
         value: scoreToImpact(rawScore),
         confidence,
+        evidenceIds: [] as string[],
     };
 }
 

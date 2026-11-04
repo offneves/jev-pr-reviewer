@@ -94,17 +94,33 @@ export const GateResultSchema = z.object({
 });
 export type GateResultJson = z.infer<typeof GateResultSchema>;
 
+export const EvidenceIdSchema = z.string().regex(/^E\d+$/);
+
+export const EvidenceItemSchema = z.object({
+    id: EvidenceIdSchema,
+    path: z.string(),
+    snippet: z.string(),
+});
+export type EvidenceItem = z.infer<typeof EvidenceItemSchema>;
+
+/** Scored axes: 0–100 impact plus app-catalog evidence ids cited by JEV. */
+export const ScoredDecisionSchema = DecisionSchema(ImpactSchema).extend({
+    evidenceIds: z.array(z.string()).default([]),
+});
+
 export const JevDecisionsSchema = z.object({
     breakingChange: DecisionSchema(YesNoSchema),
-    securityImpact: DecisionSchema(ImpactSchema),
-    databaseChange: DecisionSchema(ImpactSchema),
-    apiImpact: DecisionSchema(ImpactSchema),
-    authenticationImpact: DecisionSchema(ImpactSchema),
+    securityImpact: ScoredDecisionSchema,
+    databaseChange: ScoredDecisionSchema,
+    apiImpact: ScoredDecisionSchema,
+    authenticationImpact: ScoredDecisionSchema,
     needsHumanReview: DecisionSchema(YesNoSchema),
     riskLevel: DecisionSchema(RiskLevelSchema),
 });
 
 export type JevDecisions = z.infer<typeof JevDecisionsSchema>;
+/** Input shape: evidenceIds may be omitted (defaults to []). */
+export type JevDecisionsInput = z.input<typeof JevDecisionsSchema>;
 
 export const ScoreContributionSchema = z.object({
     signal: z.string(),

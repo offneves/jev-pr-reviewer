@@ -1,19 +1,15 @@
 import {
     JevDecisionsSchema,
-    type Impact,
     type JevDecisions,
-    type YesNo,
-    type RiskLevel,
+    type JevDecisionsInput,
 } from "../schema.js";
 import type { JevClient } from "./types.js";
 
 type DecisionOverrides = {
-    [K in keyof JevDecisions]?: Partial<JevDecisions[K]> & {
-        value?: JevDecisions[K]["value"];
-    };
+    [K in keyof JevDecisions]?: Partial<JevDecisions[K]>;
 };
 
-const DEFAULTS: JevDecisions = {
+const DEFAULTS: JevDecisionsInput = {
     breakingChange: { value: "no", confidence: 0.9 },
     securityImpact: { value: 0, confidence: 0.9 },
     databaseChange: { value: 0, confidence: 0.9 },
@@ -23,14 +19,8 @@ const DEFAULTS: JevDecisions = {
     riskLevel: { value: "LOW", confidence: 0.9 },
 };
 
-function mergeDecision<T extends YesNo | RiskLevel | Impact>(
-    base: { value: T; confidence: number },
-    override?: Partial<{ value: T; confidence: number }>,
-): { value: T; confidence: number } {
-    return {
-        value: (override?.value ?? base.value) as T,
-        confidence: override?.confidence ?? base.confidence,
-    };
+function mergeDecision<D extends object>(base: D, override?: Partial<D>): D {
+    return { ...base, ...override };
 }
 
 export type MockProfile = "default" | "busy" | "critical";
@@ -66,7 +56,7 @@ export function createMockJevClient(
 
     return {
         async evaluate() {
-            const merged: JevDecisions = {
+            const merged: JevDecisionsInput = {
                 breakingChange: mergeDecision(
                     DEFAULTS.breakingChange,
                     mergedAnswers.breakingChange,

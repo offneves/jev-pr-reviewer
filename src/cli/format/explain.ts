@@ -9,6 +9,7 @@ import {
     riskColor,
     scoreBar,
     section,
+    truncationWarning,
 } from "./shared.js";
 import { labelForSignal, type DisplayConfig } from "./types.js";
 
@@ -44,6 +45,11 @@ export function formatExplain(
 
     lines.push(boxTitle(display.explain.title));
     lines.push("");
+    const warning = truncationWarning(result);
+    if (warning.length > 0) {
+        lines.push(...warning);
+        lines.push("");
+    }
     lines.push(`  ${section(sections.contributions)}`);
 
     const maxPoints = Math.max(1, ...contributions.map((c) => c.points));

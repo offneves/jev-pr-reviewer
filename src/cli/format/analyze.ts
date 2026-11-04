@@ -11,6 +11,7 @@ import {
     pct,
     scoreBar,
     section,
+    truncationWarning,
     valueTone,
 } from "./shared.js";
 import { labelForDecision, type DisplayConfig } from "./types.js";
@@ -77,6 +78,11 @@ export function formatAnalyze(
     const lines: string[] = [];
     lines.push(boxTitle(display.analyze.title));
     lines.push("");
+    const warning = truncationWarning(result);
+    if (warning.length > 0) {
+        lines.push(...warning);
+        lines.push("");
+    }
     lines.push(
         formatRiskActionLine(
             sections.risk,

@@ -60,7 +60,7 @@ score = round( sum(impact_i * weight_i) / sum(weight_i) )
 ```
 
    Resultado clampado em 0–100 → nível LOW / MEDIUM / HIGH / CRITICAL via `levels`.
-5. **Review policy** transforma nível (+ gate de confiança) em APPROVE / REVIEW / BLOCK e recommendation.
+5. **Review policy** transforma nível (+ gate de confiança + diff truncado ⇒ nunca APPROVE) em APPROVE / REVIEW / BLOCK e recommendation.
 6. Imprime relatório legível ou JSON.
 
 `files.tiers` e `lines.tiers` **não entram no score** (só métricas de state / compatibilidade de config).
@@ -140,7 +140,14 @@ Campos `_docs` e `description` são só documentação.
 
 #### `diff.maxChars` (default: 80000)
 
-Teto do texto do `.diff` no state / enviado ao JEV. Acima disso: corte + `truncated=true`. Contagem de arquivos e linhas usa o arquivo inteiro. Não altera o score.
+Teto do texto do `.diff` no state / enviado ao JEV. Contagem de arquivos e linhas usa o arquivo inteiro. Não altera o score.
+
+Quando o diff passa do teto (`truncated=true`):
+
+- **Hunks de paths sensíveis vão primeiro** (auth/login/session/token/secret/crypto/security, `migrations/`, `.sql`, `.env*`, `Dockerfile`, `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`). Hunks inteiros são empacotados até o teto; o resto entra na ordem original. Sem paths sensíveis → corte simples do início.
+- **Nunca APPROVE**: se a política daria APPROVE, vira REVIEW (BLOCK continua possível).
+- `analyze` / `explain` mostram um aviso `⚠ Diff truncated` no topo.
+- `--json` inclui `truncation: { truncated, originalChars, keptChars, prioritizedPaths }`.
 
 #### `weights` (importância relativa)
 

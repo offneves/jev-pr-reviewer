@@ -101,3 +101,21 @@ export function formatRiskActionLine(
     const act = paint(action, BOLD, actionColor(action));
     return `  ${paint(riskLabel, DIM)} ${risk}   ${paint(actionLabel, DIM)} ${act}`;
 }
+
+/** Prominent warning lines when JEV only saw part of the diff; empty when not truncated. */
+export function truncationWarning(result: AnalysisResult): string[] {
+    const t = result.truncation;
+    if (!t.truncated) return [];
+    const lines = [
+        `  ${paint("⚠ Diff truncated", BOLD, YELLOW)}${paint(
+            ` — JEV analyzed ${t.keptChars} of ${t.originalChars} chars; APPROVE disabled`,
+            YELLOW,
+        )}`,
+    ];
+    if (t.prioritizedPaths.length > 0) {
+        lines.push(
+            `  ${paint(`  prioritized: ${t.prioritizedPaths.join(", ")}`, DIM)}`,
+        );
+    }
+    return lines;
+}

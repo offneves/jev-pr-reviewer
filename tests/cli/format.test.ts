@@ -274,3 +274,40 @@ describe("AnalysisResult JSON shape", () => {
         expect(() => AnalysisResultSchema.parse(json)).not.toThrow();
     });
 });
+
+describe("truncation warning (TRUNC-01)", () => {
+    const truncatedResult = () =>
+        sampleResult({
+            state: {
+                files: ["src/auth/login.ts", "src/ui/Button.tsx"],
+                additions: 3,
+                deletions: 1,
+                diffText: "diff",
+                truncated: true,
+            },
+            truncation: {
+                truncated: true,
+                originalChars: 120000,
+                keptChars: 80000,
+                prioritizedPaths: ["src/auth/login.ts"],
+            },
+        });
+
+    it("analyze shows a truncation warning with kept/original chars", () => {
+        const text = formatAnalyze(truncatedResult(), baseDisplay());
+        const warning = text.split("\n").find((l) => /diff truncated/i.test(l));
+        expect(warning).toBeDefined();
+        expect(warning).toContain("80000 of 120000");
+        expect(text).toContain("src/auth/login.ts");
+    });
+
+    it("explain shows the truncation warning", () => {
+        const text = formatExplain(truncatedResult(), baseDisplay());
+        expect(text).toMatch(/diff truncated/i);
+    });
+
+    it("omits the warning when the diff was not truncated", () => {
+        expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/diff truncated/i);
+        expect(formatExplain(sampleResult(), baseDisplay())).not.toMatch(/diff truncated/i);
+    });
+});

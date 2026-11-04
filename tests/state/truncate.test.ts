@@ -41,6 +41,23 @@ describe("truncation: sensitive hunk prioritization (TRUNC-05/06/07)", () => {
     });
 });
 
+describe("truncation budget use", () => {
+    it("fills the leftover budget with a cut of an oversized hunk instead of dropping it", () => {
+        const { state } = buildDiffInput(MIXED, MAX);
+        expect(state.diffText.length).toBe(MAX);
+        expect(state.diffText).toContain("diff --git a/src/ui/Button.tsx");
+    });
+
+    it("keeps a cut of an oversized sensitive hunk at the front", () => {
+        const bigAuth = fileDiff("src/auth/login.ts", `+${"a".repeat(2_000)}`);
+        const text = `${FILLER}${bigAuth}`;
+        const { state, truncation } = buildDiffInput(text, MAX);
+        expect(state.diffText.length).toBe(MAX);
+        expect(state.diffText.startsWith("diff --git a/src/auth/login.ts")).toBe(true);
+        expect(truncation.prioritizedPaths).toEqual(["src/auth/login.ts"]);
+    });
+});
+
 describe("truncation metadata (TRUNC-04)", () => {
     it("reports truncated, originalChars, keptChars, prioritizedPaths when cut", () => {
         const { state, truncation } = buildDiffInput(MIXED, MAX);

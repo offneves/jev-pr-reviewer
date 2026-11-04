@@ -80,7 +80,8 @@ function prefixResult(text: string, maxChars: number): TruncateResult {
 
 /**
  * Fits `text` into `maxChars`. When the diff contains sensitive paths, their hunks are
- * packed first (whole hunks, greedy); otherwise the diff is cut as a prefix.
+ * packed first (whole hunks, greedy), then the leftover budget is filled with a cut of
+ * the first hunk that did not fit; otherwise the diff is cut as a prefix.
  */
 export function truncateDiff(text: string, maxChars: number): TruncateResult {
     if (text.length <= maxChars) {
@@ -107,6 +108,14 @@ export function truncateDiff(text: string, maxChars: number): TruncateResult {
 
     let out = "";
     const prioritized: string[] = [];
+    // First piece that did not fit whole; used to fill the leftover budget.
+    let skipped: { text: string; section: FileSection } | null = null;
+    const markKept = (section: FileSection) => {
+        if (section.sensitive && !prioritized.includes(section.path)) {
+            prioritized.push(section.path);
+        }
+    };
+
     for (const section of ordered) {
         let kept = "";
         const pieces = section.hunks.length > 0 ? section.hunks : [""];
@@ -114,18 +123,20 @@ export function truncateDiff(text: string, maxChars: number): TruncateResult {
             const piece = (kept ? "" : section.header) + hunk;
             if (out.length + kept.length + piece.length <= maxChars) {
                 kept += piece;
-            } else if (out.length === 0 && kept.length === 0) {
-                // Nothing fits yet: keep a cut of the first (highest-priority) piece.
-                kept = piece.slice(0, maxChars);
+            } else if (!skipped) {
+                skipped = { text: piece, section };
             }
         }
         if (kept) {
             out += kept;
-            if (section.sensitive && !prioritized.includes(section.path)) {
-                prioritized.push(section.path);
-            }
+            markKept(section);
         }
-        if (out.length >= maxChars) break;
+    }
+
+    const room = maxChars - out.length;
+    if (skipped && room > 0) {
+        out += skipped.text.slice(0, room);
+        markKept(skipped.section);
     }
 
     return {

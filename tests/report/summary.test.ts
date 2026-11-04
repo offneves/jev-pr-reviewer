@@ -134,6 +134,16 @@ describe("buildHotspots (TRUST-02)", () => {
         ]);
     });
 
+    it("caps changed lines at 50 so a warn gate outranks a huge ungated file", () => {
+        const huge = Array.from({ length: 200 }, (_, i) => `+line${i}`);
+        const diff = `${fileDiff("src/big.ts", huge)}${fileDiff("src/flagged.ts", ["+x"])}`;
+        const hotspots = buildHotspots(buildInventory(diff), diff, [
+            { id: "custom", severity: "warn", matchedPaths: ["src/flagged.ts"] },
+        ]);
+        expect(hotspots.map((h) => h.path)).toEqual(["src/flagged.ts", "src/big.ts"]);
+        expect(hotspots[1].reason).toBe("200 changed lines");
+    });
+
     it("returns [] for an empty inventory", () => {
         expect(buildHotspots(EMPTY_INVENTORY, "", [])).toEqual([]);
     });

@@ -106,6 +106,15 @@ describe("default gate rules (GATE-01)", () => {
         expect(gatesFor(diff).map((g) => g.id)).toEqual(["test-removal"]);
     });
 
+    it("requires removed lines to exceed twice the added lines", () => {
+        const removed = (n: number) => Array.from({ length: n }, (_, i) => `-  it("r${i}")`);
+        const added = Array.from({ length: 5 }, (_, i) => `+  it("a${i}")`);
+        const atRatio = fileDiff("tests/x.test.ts", [...removed(10), ...added]);
+        const overRatio = fileDiff("tests/x.test.ts", [...removed(11), ...added]);
+        expect(gatesFor(atRatio)).toEqual([]);
+        expect(gatesFor(overRatio).map((g) => g.id)).toEqual(["test-removal"]);
+    });
+
     it("does not flag small test edits", () => {
         const diff = fileDiff("tests/user.test.ts", ["-a", "-b", "+c"]);
         expect(gatesFor(diff)).toEqual([]);

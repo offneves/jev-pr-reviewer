@@ -44,6 +44,11 @@ describe("buildEvidenceCatalog (EVID-01)", () => {
         expect(buildEvidenceCatalog("")).toEqual([]);
     });
 
+    it("uses the documented caps: 40 items, 240-char snippets", () => {
+        expect(EVIDENCE_LIMIT).toBe(40);
+        expect(SNIPPET_MAX_CHARS).toBe(240);
+    });
+
     it("caps snippets and the number of items", () => {
         const long = `+${"x".repeat(1_000)}`;
         const [item] = buildEvidenceCatalog(fileDiff("a.ts", [[long]]));

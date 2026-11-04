@@ -224,4 +224,23 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("forces REVIEW for a high impact when the evidence catalog is empty", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "empty.diff");
+        try {
+            await writeFile(path, "", "utf8");
+            const result = await analyzeDiff(
+                path,
+                createMockJevClient({ apiImpact: { value: 90, confidence: 0.9 } }),
+                { ...DEFAULT_CONFIG, weights: { security: 0, database: 0, api: 0, authentication: 1 } },
+            );
+            expect(result.evidence).toEqual([]);
+            expect(result.decisions.apiImpact.evidenceIds).toEqual([]);
+            expect(result.riskLevel).toBe("LOW");
+            expect(result.action).toBe("REVIEW");
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });

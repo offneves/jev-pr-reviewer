@@ -194,7 +194,7 @@ Reservados / compatibilidade. **Não afetam o score.**
 | `mediumMax`+1 … `highMax` (80) | HIGH | REVIEW |
 | acima de `highMax` | CRITICAL | BLOCK |
 
-\*Sujeito ao gate de confiança. Se `securityImpact >= 1`, o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
+\*Sujeito ao gate de confiança e às demais regras. Se `securityImpact >= policy.securityHoldMinImpact` (default 30), o texto de recommendation usa `blockOrSecurity` mesmo quando a ação não é BLOCK.
 
 #### `confidence.threshold` (default: 0.7)
 
@@ -210,9 +210,19 @@ Compara o nível de risco calculado pela app com o `riskLevel` advisory do JEV (
 
 #### `recommendations`
 
-- `approve` — APPROVE e security impact = 0
+- `approve` — APPROVE e security impact abaixo de `policy.securityHoldMinImpact`
 - `review` — REVIEW
-- `blockOrSecurity` — BLOCK, ou security impact ≥ 1
+- `blockOrSecurity` — BLOCK, ou security impact ≥ `policy.securityHoldMinImpact`
+
+#### `policy.securityHoldMinImpact` (default: 30)
+
+Impacto de segurança (0–100) a partir do qual a recommendation passa a ser `blockOrSecurity`. Muda só o texto, não a ação.
+
+**Mudança incompatível:** antes era fixo em `>= 1` (qualquer impacto de segurança). Agora impactos de 1 a 29 usam o texto normal. Para o comportamento antigo, configure `1`. Com `0`, todo PR recebe o texto de segurança.
+
+#### `policy.neverApproveGlobs` (default: `[]`)
+
+Globs de path (`**` qualquer profundidade, `*` dentro de um diretório, `?` um caractere) comparados com os arquivos do inventário. Se algum arquivo casar, APPROVE vira REVIEW (BLOCK não muda). Lista vazia não faz nada. Ex.: `["**/security/**", "infra/**"]`.
 
 #### `cli.defaultBaseBranch` (default: `main`)
 

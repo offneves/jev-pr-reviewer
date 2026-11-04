@@ -64,7 +64,7 @@
         "disagreementForceReview": true
     },
     "recommendations": {
-        "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact >= 1.",
+        "description": "Textos exibidos no relatório. blockOrSecurity é usado quando a ação é BLOCK ou quando securityImpact >= policy.securityHoldMinImpact.",
         "approve": "Automatic approval possible",
         "review": "Human review recommended",
         "blockOrSecurity": "Security review required"
@@ -129,5 +129,10 @@
     "evidence": {
         "description": "A app monta um catálogo de evidências (E1, E2, ... = trechos alterados do diff, até 40, paths sensíveis primeiro) e o JEV cita quais sustentam cada eixo pontuado. Se algum eixo (security, database, api, authentication) tiver impacto >= minImpactForRequiredEvidence e nenhuma evidência citada, APPROVE vira REVIEW (BLOCK não muda). Não altera o score.",
         "minImpactForRequiredEvidence": 40
+    },
+    "policy": {
+        "description": "securityHoldMinImpact: impacto de segurança (0–100) a partir do qual a recommendation vira blockOrSecurity (só texto, não muda a ação). MUDANÇA INCOMPATÍVEL: antes era fixo em >= 1; agora o default é 30 (use 1 para o comportamento antigo; 0 faz todo PR receber o texto de segurança). neverApproveGlobs: globs de path (** qualquer profundidade, * dentro de um diretório, ? um caractere); se algum arquivo do diff casar, APPROVE vira REVIEW (BLOCK não muda). Lista vazia não faz nada.",
+        "securityHoldMinImpact": 30,
+        "neverApproveGlobs": []
     }
 }

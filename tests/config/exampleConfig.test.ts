@@ -47,5 +47,22 @@ describe("example config gates", () => {
         expect(cfg.evidence.minImpactForRequiredEvidence).toBe(40);
         expect(cfg.confidence.scoredOnly).toBe(true);
         expect(cfg.confidence.disagreementForceReview).toBe(true);
+        expect(cfg.policy).toEqual({ securityHoldMinImpact: 30, neverApproveGlobs: [] });
+    });
+});
+
+describe("example config security policy docs (SECPOL-04)", () => {
+    it("documents securityHoldMinImpact and the 1 to 30 change", async () => {
+        const text = await readFile(
+            resolve(process.cwd(), "config/jev-pr-reviewer.config.example.json"),
+            "utf8",
+        );
+        const parsed = JSON.parse(text) as {
+            policy: { description: string; securityHoldMinImpact: number };
+        };
+        expect(parsed.policy.securityHoldMinImpact).toBe(30);
+        expect(parsed.policy.description).toContain("securityHoldMinImpact");
+        expect(parsed.policy.description).toMatch(/>= 1/);
+        expect(parsed.policy.description).toContain("neverApproveGlobs");
     });
 });

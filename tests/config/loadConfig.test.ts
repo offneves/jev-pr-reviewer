@@ -282,3 +282,26 @@ describe("loadConfig confidence.scoredOnly (CONF-03)", () => {
         }
     });
 });
+
+describe("loadConfig policy (SECPOL-03/05)", () => {
+    it("defaults to securityHoldMinImpact 30 and empty neverApproveGlobs; accepts overrides", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
+        try {
+            expect((await loadConfig({ cwd: dir })).policy).toEqual({
+                securityHoldMinImpact: 30,
+                neverApproveGlobs: [],
+            });
+            await writeFile(
+                join(dir, DEFAULT_CONFIG_FILENAME),
+                JSON.stringify({ policy: { neverApproveGlobs: ["infra/**"] } }),
+                "utf8",
+            );
+            expect((await loadConfig({ cwd: dir })).policy).toEqual({
+                securityHoldMinImpact: 30,
+                neverApproveGlobs: ["infra/**"],
+            });
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+});

@@ -8,6 +8,7 @@ import { buildEvidenceCatalog, keepKnownEvidenceIds } from "../state/evidence.js
 import { calculateRisk } from "../risk/calculator.js";
 import { aggregateConfidence, applyPolicy } from "../risk/policy.js";
 import { evaluateGates } from "../risk/gates.js";
+import { buildHotspots, buildSummary, type SummaryInput } from "../report/summary.js";
 
 export async function analyzeDiff(
     path: string,
@@ -35,7 +36,7 @@ export async function analyzeDiff(
         paths: inventory.files.map((f) => f.path),
     });
 
-    return AnalysisResultSchema.parse({
+    const base: SummaryInput = {
         state,
         truncation,
         inventory,
@@ -49,5 +50,11 @@ export async function analyzeDiff(
         action: policy.action,
         recommendation: policy.recommendation,
         contributions: breakdown.contributions,
+    };
+
+    return AnalysisResultSchema.parse({
+        ...base,
+        summary: buildSummary(base, config),
+        hotspots: buildHotspots(inventory, text, gates),
     });
 }

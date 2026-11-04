@@ -42,6 +42,12 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
         gates: [],
         evidence: [],
         disagreement: null,
+        summary: [
+            "1 file (1 modified) in 1 directory; +3/-1 lines; 1 symbol changed",
+            "Top impacts: security 85, database 40 (score 51, MEDIUM)",
+            "Action REVIEW from risk level MEDIUM; no gates or overrides",
+        ],
+        hotspots: [{ path: "src/foo.ts", reason: "4 changed lines; 1 symbol" }],
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },
@@ -452,5 +458,33 @@ describe("disagreement note (CONF-06)", () => {
 
     it("omits the note when levels agree", () => {
         expect(formatAnalyze(sampleResult(), baseDisplay())).not.toMatch(/disagree/i);
+    });
+});
+
+describe("summary and hotspots in analyze (TRUST-01/02)", () => {
+    it("renders a Summary section with exactly the 3 bullets", () => {
+        const lines = formatAnalyze(sampleResult(), baseDisplay()).split("\n");
+        const start = lines.findIndex((l) => l.includes("Summary"));
+        expect(start).toBeGreaterThan(-1);
+        expect(lines.slice(start + 1, start + 4)).toEqual([
+            "  - 1 file (1 modified) in 1 directory; +3/-1 lines; 1 symbol changed",
+            "  - Top impacts: security 85, database 40 (score 51, MEDIUM)",
+            "  - Action REVIEW from risk level MEDIUM; no gates or overrides",
+        ]);
+        expect(lines[start + 4]).toBe("");
+    });
+
+    it("renders up to 5 hotspots under a Hotspots heading", () => {
+        const hotspots = ["a", "b", "c", "d", "e"].map((n) => ({ path: `src/${n}.ts`, reason: `r-${n}` }));
+        const lines = formatAnalyze(sampleResult({ hotspots }), baseDisplay()).split("\n");
+        const start = lines.findIndex((l) => l.includes("Hotspots"));
+        expect(start).toBeGreaterThan(-1);
+        const rows = lines.slice(start + 1, start + 6);
+        expect(rows.map((l) => l.trim().split(/\s+/)[0])).toEqual(hotspots.map((h) => h.path));
+        expect(rows[0]).toContain("r-a");
+    });
+
+    it("omits Hotspots when there are none", () => {
+        expect(formatAnalyze(sampleResult({ hotspots: [] }), baseDisplay())).not.toContain("Hotspots");
     });
 });

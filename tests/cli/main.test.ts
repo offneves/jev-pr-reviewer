@@ -87,6 +87,11 @@ describe("CLI", () => {
                 { path: "a.ts", status: "modified", language: "typescript" },
             ]);
             expect(parsed.gates).toEqual([]);
+            expect(parsed.summary).toHaveLength(3);
+            expect(parsed.summary[0]).toBe(
+                "1 file (1 modified) in 1 directory; +2/-0 lines; 0 symbols changed",
+            );
+            expect(parsed.hotspots).toEqual([{ path: "a.ts", reason: "2 changed lines" }]);
             expect(parsed.evidence).toEqual([
                 { id: "E1", path: "a.ts", snippet: "+one\n+two" },
             ]);

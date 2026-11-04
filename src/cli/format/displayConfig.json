@@ -8,7 +8,9 @@
             "action": "Action",
             "scored": "Scored decisions",
             "advisory": "Advisory · not in score",
-            "state": "State"
+            "state": "State",
+            "summary": "Summary",
+            "hotspots": "Hotspots"
         },
         "scored": {
             "order": [

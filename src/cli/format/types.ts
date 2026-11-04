@@ -18,6 +18,8 @@ export const DisplayConfigSchema = z.object({
             scored: z.string().min(1),
             advisory: z.string().min(1),
             state: z.string().min(1),
+            summary: z.string().min(1).optional(),
+            hotspots: z.string().min(1).optional(),
         }),
         scored: OrderedLabelSchema,
         advisory: OrderedLabelSchema,

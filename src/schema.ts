@@ -147,6 +147,10 @@ export const AnalysisResultSchema = z.object({
     gates: z.array(GateResultSchema),
     evidence: z.array(EvidenceItemSchema),
     disagreement: DisagreementSchema.nullable(),
+    /** Exactly three app-composed bullets (shape, impacts, action reasons). */
+    summary: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]),
+    /** Up to five files to review first. */
+    hotspots: z.array(z.object({ path: z.string(), reason: z.string() })).max(5),
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

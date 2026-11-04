@@ -131,6 +131,11 @@ export function formatAnalyze(
     lines.push("");
     lines.push(`  ${paint("→", CYAN)} ${paint(result.recommendation, BOLD)}`);
     lines.push("");
+    lines.push(`  ${section(sections.summary ?? "Summary")}`);
+    for (const bullet of result.summary) {
+        lines.push(`  - ${bullet}`);
+    }
+    lines.push("");
     const note = disagreementNote(result);
     if (note.length > 0) {
         lines.push(...note);
@@ -139,6 +144,14 @@ export function formatAnalyze(
     const gates = gatesSection(result);
     if (gates.length > 0) {
         lines.push(...gates);
+        lines.push("");
+    }
+    if (result.hotspots.length > 0) {
+        lines.push(`  ${section(sections.hotspots ?? "Hotspots")}`);
+        const width = Math.max(...result.hotspots.map((h) => h.path.length));
+        for (const h of result.hotspots) {
+            lines.push(`  ${padLabel(h.path, width)}  ${paint(h.reason, DIM)}`);
+        }
         lines.push("");
     }
 

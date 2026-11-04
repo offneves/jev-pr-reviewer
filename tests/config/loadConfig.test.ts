@@ -268,6 +268,7 @@ describe("loadConfig confidence.scoredOnly (CONF-03)", () => {
         const dir = await mkdtemp(join(tmpdir(), "jev-cfg-"));
         try {
             expect((await loadConfig({ cwd: dir })).confidence.scoredOnly).toBe(true);
+            expect((await loadConfig({ cwd: dir })).confidence.disagreementForceReview).toBe(true);
             await writeFile(
                 join(dir, DEFAULT_CONFIG_FILENAME),
                 JSON.stringify({ confidence: { scoredOnly: false } }),

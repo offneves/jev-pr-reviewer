@@ -1,6 +1,6 @@
 import type { AppConfig } from "../config/schema.js";
 import { DEFAULT_CONFIG } from "../config/defaults.js";
-import type { JevDecisions, RiskLevel } from "../schema.js";
+import type { Disagreement, JevDecisions, RiskLevel } from "../schema.js";
 import type { RiskBreakdown } from "./calculator.js";
 import type { GateResult } from "./gates.js";
 
@@ -9,6 +9,20 @@ export type PolicyAction = "APPROVE" | "REVIEW" | "BLOCK";
 export interface PolicyResult {
     action: PolicyAction;
     recommendation: string;
+    /** App vs JEV advisory risk level clash of 2+ ranks; null otherwise. */
+    disagreement: Disagreement | null;
+}
+
+const LEVEL_RANK: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+export const DISAGREEMENT_MIN_RANKS = 2;
+
+/** Rank distance between app and JEV levels when it is at least 2; null otherwise. */
+export function riskDisagreement(
+    appRiskLevel: RiskLevel,
+    jevRiskLevel: RiskLevel,
+): Omit<Disagreement, "forcedReview"> | null {
+    const ranks = Math.abs(LEVEL_RANK[appRiskLevel] - LEVEL_RANK[jevRiskLevel]);
+    return ranks >= DISAGREEMENT_MIN_RANKS ? { appRiskLevel, jevRiskLevel, ranks } : null;
 }
 
 const SCORED_KEYS = [
@@ -96,6 +110,13 @@ export function applyPolicy(
         confidence < config.confidence.threshold
             ? "REVIEW"
             : actionFromLevel(breakdown.riskLevel);
+    const clash = riskDisagreement(breakdown.riskLevel, decisions.riskLevel.value);
+    let disagreement: Disagreement | null = null;
+    if (clash) {
+        const forcedReview = config.confidence.disagreementForceReview && action === "APPROVE";
+        if (forcedReview) action = "REVIEW";
+        disagreement = { ...clash, forcedReview };
+    }
     if (context.truncated && action === "APPROVE") {
         action = "REVIEW";
     }
@@ -119,5 +140,6 @@ export function applyPolicy(
             hasSecurityImpact(decisions),
             config.recommendations,
         ),
+        disagreement,
     };
 }

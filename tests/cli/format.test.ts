@@ -41,6 +41,7 @@ function sampleResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
         },
         gates: [],
         evidence: [],
+        disagreement: null,
         decisions: {
             breakingChange: { value: "no", confidence: 0.9 },
             securityImpact: { value: 85, confidence: 0.9 },

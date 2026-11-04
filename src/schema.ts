@@ -108,6 +108,16 @@ export const ScoredDecisionSchema = DecisionSchema(ImpactSchema).extend({
     evidenceIds: z.array(z.string()).default([]),
 });
 
+export const DisagreementSchema = z.object({
+    appRiskLevel: RiskLevelSchema,
+    jevRiskLevel: RiskLevelSchema,
+    /** Absolute distance between levels (LOW=0 .. CRITICAL=3). */
+    ranks: z.number().int().min(2).max(3),
+    /** True when this disagreement turned APPROVE into REVIEW. */
+    forcedReview: z.boolean(),
+});
+export type Disagreement = z.infer<typeof DisagreementSchema>;
+
 export const JevDecisionsSchema = z.object({
     breakingChange: DecisionSchema(YesNoSchema),
     securityImpact: ScoredDecisionSchema,
@@ -136,6 +146,7 @@ export const AnalysisResultSchema = z.object({
     inventory: ChangeInventorySchema,
     gates: z.array(GateResultSchema),
     evidence: z.array(EvidenceItemSchema),
+    disagreement: DisagreementSchema.nullable(),
     decisions: JevDecisionsSchema,
     score: z.number().int().min(0).max(100),
     riskLevel: RiskLevelSchema,

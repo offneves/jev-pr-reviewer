@@ -40,6 +40,7 @@ export async function analyzeDiff(
         inventory,
         gates,
         evidence,
+        disagreement: policy.disagreement,
         decisions,
         score: breakdown.score,
         riskLevel: breakdown.riskLevel,

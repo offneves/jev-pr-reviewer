@@ -498,3 +498,68 @@ describe("aggregateConfidence scoredOnly (CONF-01/02)", () => {
         expect(aggregateConfidence(d, false)).toBeCloseTo(3.6 / 7, 10);
     });
 });
+
+describe("applyPolicy disagreement with JEV riskLevel (CONF-04/05)", () => {
+    function lowAppWithJev(jev: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL", config = DEFAULT_CONFIG) {
+        const d = decisions({ riskLevel: { value: jev, confidence: 0.9 } });
+        const breakdown = calculateRisk(state(), d, config);
+        expect(breakdown.riskLevel).toBe("LOW");
+        return applyPolicy(breakdown, d, 0.95, config);
+    }
+
+    it.each([
+        ["HIGH", 2],
+        ["CRITICAL", 3],
+    ] as const)("forces REVIEW when app is LOW and JEV says %s", (jev, ranks) => {
+        const policy = lowAppWithJev(jev);
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.disagreement).toEqual({
+            appRiskLevel: "LOW",
+            jevRiskLevel: jev,
+            ranks,
+            forcedReview: true,
+        });
+    });
+
+    it.each(["LOW", "MEDIUM"] as const)(
+        "does not force REVIEW when JEV says %s (fewer than 2 ranks)",
+        (jev) => {
+            const policy = lowAppWithJev(jev);
+            expect(policy.action).toBe("APPROVE");
+            expect(policy.disagreement).toBeNull();
+        },
+    );
+
+    it("does not change action when disagreementForceReview is false", () => {
+        const config: AppConfig = {
+            ...DEFAULT_CONFIG,
+            confidence: { ...DEFAULT_CONFIG.confidence, disagreementForceReview: false },
+        };
+        const policy = lowAppWithJev("CRITICAL", config);
+        expect(policy.action).toBe("APPROVE");
+        expect(policy.disagreement).toEqual({
+            appRiskLevel: "LOW",
+            jevRiskLevel: "CRITICAL",
+            ranks: 3,
+            forcedReview: false,
+        });
+    });
+
+    it("keeps BLOCK when app is CRITICAL and JEV says LOW", () => {
+        const d = decisions({
+            securityImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            databaseChange: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            apiImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            authenticationImpact: { value: 100, confidence: 0.96, evidenceIds: ["E1"] },
+            riskLevel: { value: "LOW", confidence: 0.96 },
+        });
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.96);
+        expect(policy.action).toBe("BLOCK");
+        expect(policy.disagreement).toEqual({
+            appRiskLevel: "CRITICAL",
+            jevRiskLevel: "LOW",
+            ranks: 3,
+            forcedReview: false,
+        });
+    });
+});

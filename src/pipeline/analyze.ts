@@ -15,7 +15,9 @@ export async function analyzeDiff(
     const decisions = await client.evaluate(state);
     const breakdown = calculateRisk(state, decisions, config);
     const confidence = aggregateConfidence(decisions);
-    const policy = applyPolicy(breakdown, decisions, confidence, config);
+    const policy = applyPolicy(breakdown, decisions, confidence, config, {
+        truncated: truncation.truncated,
+    });
 
     return AnalysisResultSchema.parse({
         state,

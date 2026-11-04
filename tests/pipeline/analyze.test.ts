@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AnalysisResultSchema } from "../../src/schema.js";
+import { DEFAULT_CONFIG } from "../../src/config/defaults.js";
 import { createMockJevClient } from "../../src/jev/mockClient.js";
 import { analyzeDiff } from "../../src/pipeline/analyze.js";
 
@@ -38,6 +39,23 @@ describe("analyzeDiff", () => {
             expect(result.decisions.securityImpact.value).toBe(100);
             expect(result.score).toBeGreaterThanOrEqual(0);
             expect(["APPROVE", "REVIEW", "BLOCK"]).toContain(result.action);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
+
+    it("never APPROVEs a truncated diff even when JEV reports no risk", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "big.diff");
+        try {
+            await writeFile(path, SAMPLE, "utf8");
+            const result = await analyzeDiff(path, createMockJevClient(), {
+                ...DEFAULT_CONFIG,
+                diff: { ...DEFAULT_CONFIG.diff, maxChars: 20 },
+            });
+            expect(result.truncation.truncated).toBe(true);
+            expect(result.riskLevel).toBe("LOW");
+            expect(result.action).toBe("REVIEW");
         } finally {
             await rm(dir, { recursive: true, force: true });
         }

@@ -45,16 +45,25 @@ function recommendationFor(
     return recommendations.review;
 }
 
+export interface PolicyContext {
+    /** Diff was cut to fit diff.maxChars: JEV saw a partial PR. */
+    truncated?: boolean;
+}
+
 export function applyPolicy(
     breakdown: RiskBreakdown,
     decisions: JevDecisions,
     confidence: number,
     config: AppConfig = DEFAULT_CONFIG,
+    context: PolicyContext = {},
 ): PolicyResult {
-    const action =
+    let action: PolicyAction =
         confidence < config.confidence.threshold
             ? "REVIEW"
             : actionFromLevel(breakdown.riskLevel);
+    if (context.truncated && action === "APPROVE") {
+        action = "REVIEW";
+    }
 
     return {
         action,

@@ -313,3 +313,38 @@ describe("applyPolicy", () => {
         expect(policy.recommendation).toBe("Security review required");
     });
 });
+
+describe("applyPolicy with truncated diff (TRUNC-02/03)", () => {
+    it("emits REVIEW instead of APPROVE when truncated with LOW risk and high confidence", () => {
+        const d = decisions();
+        const breakdown = calculateRisk(state({ truncated: true }), d);
+        expect(breakdown.riskLevel).toBe("LOW");
+        const policy = applyPolicy(breakdown, d, 0.95, DEFAULT_CONFIG, {
+            truncated: true,
+        });
+        expect(policy.action).toBe("REVIEW");
+        expect(policy.recommendation).toBe("Human review recommended");
+    });
+
+    it("still emits BLOCK when truncated and risk is CRITICAL", () => {
+        const d = decisions({
+            securityImpact: { value: 100, confidence: 0.96 },
+            databaseChange: { value: 100, confidence: 0.96 },
+            apiImpact: { value: 100, confidence: 0.96 },
+            authenticationImpact: { value: 100, confidence: 0.96 },
+        });
+        const breakdown = calculateRisk(state({ truncated: true }), d);
+        const policy = applyPolicy(breakdown, d, 0.96, DEFAULT_CONFIG, {
+            truncated: true,
+        });
+        expect(policy.action).toBe("BLOCK");
+    });
+
+    it("keeps APPROVE for LOW risk when not truncated", () => {
+        const d = decisions();
+        const policy = applyPolicy(calculateRisk(state(), d), d, 0.95, DEFAULT_CONFIG, {
+            truncated: false,
+        });
+        expect(policy.action).toBe("APPROVE");
+    });
+});

@@ -1,8 +1,8 @@
-// Default sensitive-path patterns used to prioritize hunks when truncating.
-// deterministic-gates (F3) will move these into config with categories.
-// Lockfiles are intentionally excluded: they are huge and would eat the budget.
+import type { SensitiveCategory } from "../schema.js";
 
-const KEYWORDS = [
+// Default sensitive-path table. deterministic-gates (F3) will move it into config.
+
+const AUTH_KEYWORDS = [
     "auth",
     "authn",
     "authz",
@@ -20,24 +20,30 @@ const KEYWORDS = [
     "passwords",
     "credential",
     "credentials",
-    "secret",
-    "secrets",
-    "crypto",
     "security",
     "permission",
     "permissions",
     "acl",
 ];
 
-const SENSITIVE_PATTERNS: RegExp[] = [
-    new RegExp(`(?:^|[/_.-])(?:${KEYWORDS.join("|")})(?:$|[/_.-])`),
-    /(?:^|\/)migrations?(?:\/|$)/,
-    /\.sql$/,
-    /(?:^|\/)\.env(?:\.|$)/,
-    /(?:^|\/)dockerfile/,
-    /(?:^|\/)\.github\/workflows\//,
-    /\.gitlab-ci\.ya?ml$/,
-    /(?:^|\/)jenkinsfile$/,
+const SECRET_KEYWORDS = ["secret", "secrets", "crypto"];
+
+const word = (keywords: string[]) =>
+    new RegExp(`(?:^|[/_.-])(?:${keywords.join("|")})(?:$|[/_.-])`);
+
+// First match wins.
+const CATEGORY_PATTERNS: [SensitiveCategory, RegExp][] = [
+    ["lockfile", /(?:^|\/)(?:package-lock\.json|yarn\.lock|pnpm-lock\.yaml|poetry\.lock|pipfile\.lock|gradle\.lockfile)$/],
+    ["ci-config", /(?:^|\/)\.github\/workflows\//],
+    ["ci-config", /\.gitlab-ci\.ya?ml$/],
+    ["ci-config", /(?:^|\/)jenkinsfile$/],
+    ["docker-file", /(?:^|\/)dockerfile/],
+    ["docker-file", /(?:^|\/)docker-compose[^/]*\.ya?ml$/],
+    ["migration", /(?:^|\/)migrations?(?:\/|$)/],
+    ["migration", /\.sql$/],
+    ["secrets", /(?:^|\/)\.env(?:\.|$)/],
+    ["secrets", word(SECRET_KEYWORDS)],
+    ["auth", word(AUTH_KEYWORDS)],
 ];
 
 /** Splits camelCase/PascalCase into dash-separated lowercase (AuthService → auth-service). */
@@ -48,8 +54,21 @@ function normalize(path: string): string {
         .toLowerCase();
 }
 
-export function isSensitivePath(path: string): boolean {
-    if (!path) return false;
+export function sensitiveCategory(path: string): SensitiveCategory | null {
+    if (!path) return null;
     const normalized = normalize(path);
-    return SENSITIVE_PATTERNS.some((re) => re.test(normalized));
+    for (const [category, re] of CATEGORY_PATTERNS) {
+        if (re.test(normalized)) return category;
+    }
+    return null;
+}
+
+/**
+ * True when hunks of this path should be prioritized under truncation.
+ * Lockfiles are sensitive for inventory but excluded here: they are huge
+ * and would eat the budget.
+ */
+export function isSensitivePath(path: string): boolean {
+    const category = sensitiveCategory(path);
+    return category !== null && category !== "lockfile";
 }

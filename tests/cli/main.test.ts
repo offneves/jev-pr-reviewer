@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalysisResultSchema } from "../../src/schema.js";
-import { runCli } from "../../src/cli/main.js";
+import { renderUsage } from "citty";
+import { mainCommand, runCli } from "../../src/cli/main.js";
 
 vi.mock("../../src/git/fetchMrDiff.js", async (importOriginal) => {
     const actual = await importOriginal<
@@ -396,5 +397,14 @@ describe("CLI", () => {
             errSpy.mockRestore();
             await rm(dir, { recursive: true, force: true });
         }
+    });
+});
+
+describe("CLI help (TRUST-06)", () => {
+    it.each(["analyze", "mr"] as const)("%s help mentions --strict", async (name) => {
+        const subCommands = mainCommand.subCommands as Record<string, Parameters<typeof renderUsage>[0]>;
+        const usage = await renderUsage(subCommands[name], mainCommand);
+        expect(usage).toContain("--strict");
+        expect(usage).toMatch(/Exit with code 1/);
     });
 });

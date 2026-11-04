@@ -123,6 +123,7 @@ O binário prefere `dist/` se existir; depois de alterar o código, rode `npm ru
 | `--config` | Caminho do JSON de política. Sem ela: `jev-pr-reviewer.config.json` no cwd ou defaults. |
 | `--mock` | Usa decisões fake (sem TypeSafe / sem rede). |
 | `--profile` | Com `--mock`: `default`, `busy` ou `critical`. |
+| `--strict` | (`analyze` / `mr`) Sai com código 1 quando a ação é BLOCK, o diff foi truncado, a confiança ficou abaixo do threshold ou um gate `block` casou. Ainda não tem efeito: o comportamento chega com a suite golden (F8). |
 
 Exemplos:
 
@@ -333,6 +334,12 @@ No `analyze` pretty:
 - **Scored decisions** — impactos 0–100 (`securityImpact`, `databaseChange`, `apiImpact`, `authenticationImpact`)
 - **Advisory · not in score** — `breakingChange`, `needsHumanReview`, `riskLevel`
 - **State** — arquivos do inventário, `+adições/-remoções` e símbolos alterados (`N symbols (+adicionados ~modificados -removidos)`)
+
+- **Summary** — 3 bullets montados pela app (sem chamada extra ao JEV): formato da mudança (arquivos, diretórios, linhas, símbolos), maiores impactos com score/nível, e por que a ação ficou assim (gates, truncagem, confiança baixa, desacordo, falta de evidência)
+- **Hotspots** — até 5 arquivos para revisar primeiro: gate mais forte (block 100 / warn 50 / info 10) ou categoria sensível (30), + linhas alteradas (máx. 50), + 5 por símbolo alterado
+- **Since last run** — diferença de score em relação à última execução no mesmo diretório (`.jev-last-result.json`, gravado a cada `analyze`/`mr`, ignorado pelo git; arquivo corrompido é ignorado)
+
+`--json` inclui `summary` (3 strings) e `hotspots` (`{ path, reason }[]`).
 
 No `explain`: contribuições com impacto e weight, na ordem de `explain.signals.order` (sem sort por pontos).
 

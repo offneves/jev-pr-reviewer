@@ -127,7 +127,16 @@ const mockArgs = {
     },
 };
 
-const main = defineCommand({
+const strictArg = {
+    strict: {
+        type: "boolean" as const,
+        description:
+            "Exit with code 1 when action is BLOCK, the diff was truncated, confidence is below threshold, or a block gate matched",
+        default: false,
+    },
+};
+
+export const mainCommand = defineCommand({
     meta: {
         name: "jev-pr-reviewer",
         description: "Analyze PR diffs with JEV decisions and code-owned risk policy",
@@ -149,6 +158,7 @@ const main = defineCommand({
                     description: "Emit AnalysisResult JSON",
                     default: false,
                 },
+                ...strictArg,
                 ...mockArgs,
             },
             async run({ args }) {
@@ -218,6 +228,7 @@ const main = defineCommand({
                     description: "Show score breakdown instead of analyze report",
                     default: false,
                 },
+                ...strictArg,
                 ...mockArgs,
             },
             async run({ args }) {
@@ -242,7 +253,7 @@ const main = defineCommand({
 
 export async function runCli(argv = process.argv.slice(2)): Promise<void> {
     try {
-        await runCommand(main, { rawArgs: argv });
+        await runCommand(mainCommand, { rawArgs: argv });
     } catch (err) {
         const message =
             err instanceof DiffFileError ||

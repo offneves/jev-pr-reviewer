@@ -89,4 +89,18 @@ describe("analyzeDiff", () => {
             await rm(dir, { recursive: true, force: true });
         }
     });
+
+    it("completes analysis with an empty inventory for an empty diff", async () => {
+        const dir = await mkdtemp(join(tmpdir(), "jev-analyze-"));
+        const path = join(dir, "empty.diff");
+        try {
+            await writeFile(path, "", "utf8");
+            const result = await analyzeDiff(path, createMockJevClient());
+            expect(result.inventory.files).toEqual([]);
+            expect(result.inventory.symbols).toEqual({ added: [], modified: [], removed: [] });
+            expect(["APPROVE", "REVIEW", "BLOCK"]).toContain(result.action);
+        } finally {
+            await rm(dir, { recursive: true, force: true });
+        }
+    });
 });
